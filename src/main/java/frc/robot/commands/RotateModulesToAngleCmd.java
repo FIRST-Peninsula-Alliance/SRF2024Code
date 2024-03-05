@@ -4,10 +4,10 @@
 
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.SwerveSubsystem;
 
-public class RotateModulesToAngleCmd extends CommandBase { 
+public class RotateModulesToAngleCmd extends Command {
   double m_angleDeg;
   SwerveSubsystem m_drive;
   long m_startTime;

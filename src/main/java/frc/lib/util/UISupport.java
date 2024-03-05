@@ -4,9 +4,9 @@ import edu.wpi.first.math.MathUtil;
 //import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.*;
 
-public class UISupport { 
+public class UISupport {
 
-    public UISupport() {}  // revent any instances from being created
+    private UISupport() {}  // prevent any instances from being created
                         
     public static double smoothJoystick( double joystickValue, double deadBand ) {
         joystickValue = (MathUtil.applyDeadband(joystickValue, deadBand));
@@ -35,5 +35,4 @@ public class UISupport {
         }
         return varValue;
     }
-
 }

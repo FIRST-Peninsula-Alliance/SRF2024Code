@@ -1,12 +1,12 @@
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import frc.robot.RobotContainer;
 //import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-public class RumbleCmd extends CommandBase { 
+public class RumbleCmd extends Command {
   private XboxController m_xbox;
   private int m_whichSide;
   private double m_amplitude;
@@ -46,7 +46,7 @@ public class RumbleCmd extends CommandBase {
       m_amplitude = 0.0;
     }
 
-    if ((durationTimeMs > 0) && (durationTimeMs < 1000)) {
+    if ((durationTimeMs > 0) && (durationTimeMs < 10000)) {
       m_runDurationMillis = durationTimeMs;
     } else {
       m_runDurationMillis = 0;

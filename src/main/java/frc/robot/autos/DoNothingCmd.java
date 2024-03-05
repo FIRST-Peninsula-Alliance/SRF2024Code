@@ -4,12 +4,12 @@
 
 package frc.robot.autos;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 
-public class DoNothingCmd extends CommandBase {
+public class DoNothingCmd extends Command {
 
   /** Creates a new DoNothingAuto. */
-  public DoNothingCmd() { 
+  public DoNothingCmd() {
   }
 
   // Returns true when the command should end.

@@ -1,11 +1,10 @@
 package frc.robot.subsystems;
 
 import frc.lib.swerve.SwerveModule;
+import frc.robot.Constants;
 import frc.robot.Constants.*;
 
-import com.ctre.phoenix.sensors.Pigeon2;
-
-import edu.wpi.first.math.kinematics.ChassisSpeeds; 
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -13,12 +12,13 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Pose2d;
-// import edu.wpi.first.wpilibj.Timer;
 import java.text.DecimalFormat;
 import java.util.Map;
 
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
+import com.ctre.phoenix6.hardware.Pigeon2;
+
 import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -28,26 +28,26 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class SwerveSubsystem extends SubsystemBase {
-    public DigitalOutput signalOut1 = new DigitalOutput(1);
-
     private SwerveDriveOdometry m_swerveOdometry;
     private SwerveModule[] m_swerveMods;
     private SwerveModuleState[] m_states = new SwerveModuleState[4];
     private Pigeon2 m_gyro;
     private Translation2d m_cenOfRotationOffset = SDC.ROTATE_ABOUT_CEN;
     private boolean m_isFieldOriented = true;       // default is Field Oriented on start
-    private double m_varMaxOutputFactor = 1.0;      // A driver temporary settable reduction,
-                                                    // normally 1.0, when triggered (by Button A)
-                                                    // will be 10x slower, for both translate and
-                                                    // strafing, and rotating
+    private static double m_varMaxOutputFactor = 1.0;      // A temporary driver settable speed 
+                                                    // reduction factor, normally 1.0.
+                                                    // when triggered (by Right Bumper)
+                                                    // speed will be slower, for both 
+                                                    // translate and strafing, and rotating
     private double m_fixedMaxTranslationOutput  = 
             SDC.OUTPUT_DRIVE_LIMIT_FACTOR;          // This and the following are fixed 
     private double m_fixedMaxRotationOutput     =   // (changable via re-compile only)
             SDC.OUTPUT_ROTATE_LIMIT_FACTOR;         // reductions in the max speeds
-                                                    // allowed to reduce chance of 
+                                                    // allowed, to reduce chance of 
                                                     // damage, independent of
                                                     // m_varMaxOutputFactor.
     private GenericEntry        m_gyroYawEntry;
+    private GenericEntry        m_gyroRawYawEntry;
     private GenericEntry        m_isFieldOrientedEntry;
     // private GenericEntry        m_gyroPitchEntry;
     // private GenericEntry        m_gyroRollEntry;
@@ -63,8 +63,9 @@ public class SwerveSubsystem extends SubsystemBase {
     DecimalFormat df4 = new DecimalFormat("#.####");
 
     public SwerveSubsystem() {
-        m_gyro = new Pigeon2(GC.PIGEON_2_CANID);
-        m_gyro.configFactoryDefault();
+        m_gyro = new Pigeon2(GC.PIGEON_2_CANID, Constants.ROBO_RIO_BUS_NAME);
+        Pigeon2Configuration p2Config = new Pigeon2Configuration();
+        m_gyro.getConfigurator().apply(p2Config);
         zeroGyro();
 
         m_swerveMods = new SwerveModule[] {
@@ -89,7 +90,7 @@ public class SwerveSubsystem extends SubsystemBase {
         resetModulesToAbsolute();
 
         m_swerveOdometry = new SwerveDriveOdometry(SDC.SWERVE_KINEMATICS, 
-                                                   getYaw(), 
+                                                   getYaw2d(), 
                                                    getModulePositions());
         setupPublishing();
     }
@@ -125,7 +126,6 @@ public class SwerveSubsystem extends SubsystemBase {
                       double rotation, 
                       boolean isOpenLoop) {
         // Output pulse on DIO_1 for oscilloscope viewing
-        signalOut1.set(true);   // On entry drive pin high
         translation = translation.times(m_varMaxOutputFactor * m_fixedMaxTranslationOutput);
         rotation = rotation * m_varMaxOutputFactor * m_fixedMaxRotationOutput;
        
@@ -135,7 +135,7 @@ public class SwerveSubsystem extends SubsystemBase {
                                             translation.getX(), 
                                             translation.getY(), 
                                             rotation, 
-                                            getYaw())
+                                            getYaw2d())
                                         :
                                         new ChassisSpeeds(
                                             translation.getX(), 
@@ -149,9 +149,6 @@ public class SwerveSubsystem extends SubsystemBase {
         for (SwerveModule mod : m_swerveMods) {
             mod.setDesiredState(swerveModuleStates[mod.m_modNum], isOpenLoop);
         }
-
-        // Kill the pulse on DIO_1
-        signalOut1.set(false);
     }  
 
     /* Used by SwerveControllerCommand in Auto */
@@ -181,7 +178,7 @@ public class SwerveSubsystem extends SubsystemBase {
         m_varMaxOutputFactor = maxOutputFactor;
     }
 
-    public double getVarMaxOutputFactor() {
+    public static double getVarMaxOutputFactor() {
         return m_varMaxOutputFactor;
     } 
 
@@ -190,7 +187,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void resetOdometry(Pose2d pose2d) {
-        m_swerveOdometry.resetPosition(getYaw(), getModulePositions(), pose2d);
+        m_swerveOdometry.resetPosition(getYaw2d(), getModulePositions(), pose2d);
     }
 
     public double getRobotTranslateVel() {
@@ -222,21 +219,23 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void zeroGyro(){
-        m_gyro.setYaw(0);
+        //m_gyro.setYaw(0);
+        m_gyro.reset();
     }
 
-    public Rotation2d  getYaw() {
-        return (GC.INVERT_GYRO) ? Rotation2d.fromDegrees(360 - m_gyro.getYaw()) : Rotation2d.fromDegrees(m_gyro.getYaw());
+    public Rotation2d  getYaw2d() {
+        return (GC.INVERT_GYRO) ? Rotation2d.fromDegrees(360 - m_gyro.getYaw().getValueAsDouble())
+                                  : Rotation2d.fromDegrees(m_gyro.getYaw().getValueAsDouble());
     }
-
+/*
     public Rotation2d getPitch() {
-        return Rotation2d.fromDegrees(m_gyro.getPitch());
+        return Rotation2d.fromDegrees(m_gyro.getPitch().getValueAsDouble());
     }
 
     public Rotation2d getRoll() {
-        return Rotation2d.fromDegrees(m_gyro.getRoll());        
+        return Rotation2d.fromDegrees(m_gyro.getRoll().getValueAsDouble());        
     }
-
+*/
     public void resetModulesToAbsolute(){
         for(SwerveModule mod : m_swerveMods){
             mod.resetToAbsolute();
@@ -255,7 +254,8 @@ public class SwerveSubsystem extends SubsystemBase {
             if (sl == null) {
                 SmartDashboard.putString("RobotData Layout", "getLayout() Error occured");
             } else {
-                m_gyroYawEntry =        sl.add("Gyro Heading", "0").getEntry();
+                m_gyroYawEntry =        sl.add("Gyro Yaw", "0").getEntry();
+                m_gyroRawYawEntry =     sl.add("Gyro Raw Yaw", "0").getEntry();
                 m_isFieldOrientedEntry= sl.add("Field Oriented ", "Yes").getEntry();
                 m_steerKPEntry =    sl.add("Steer Motor kP ", df4.format(SDC.STEER_KP)).getEntry();
                 m_odometryPoseXEntry =  sl.add("Pose X", df2.format(m_swerveOdometry.getPoseMeters().getX())).getEntry();
@@ -279,21 +279,14 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void publishSwerveDriveData() {
-        if (m_gyroYawEntry != null) {
-            m_gyroYawEntry.setString(df1.format(m_gyro.getYaw()));
-        }
-        if (m_odometryPoseXEntry != null) {
+            m_gyroYawEntry.setString(df1.format(getYaw2d().getDegrees()));
+            m_gyroRawYawEntry.setString(df1.format(m_gyro.getYaw().getValueAsDouble()));
             m_odometryPoseXEntry.setString(df2.format(m_swerveOdometry.getPoseMeters().getX()));
-        }
-        if (m_odometryPoseYEntry != null) {
             m_odometryPoseYEntry.setString(df2.format(m_swerveOdometry.getPoseMeters().getY()));           
-        }
-        if (m_isFieldOrientedEntry != null) {
             m_isFieldOrientedEntry.setString(m_isFieldOriented ? "Yes" : "No");
-        }
         // m_gyroPitchEntry
         // m_gyroRollEntry
- 
+
         for(SwerveModule mod : m_swerveMods) {
             mod.publishModuleData();
         }
@@ -323,13 +316,13 @@ public class SwerveSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         // Update odometry on every loop instance
-        m_swerveOdometry.update(getYaw(), getModulePositions());  
+        m_swerveOdometry.update(getYaw2d(), getModulePositions());  
 
         // Reduce the data bandwidth used for telemetry by only 
         // publishing and/or checking for input every 15 loops, 
         // i.e. every 300 ms.
         m_count++;
-        if ((m_count % 15) < .001) {
+        if ((m_count % 5) < .001) {
             if (SDC.STEER_KP_TUNING_ENABLED) { 
                 checkSteerKP();
             }
@@ -341,7 +334,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // synchronously to an identical specified heading in degrees
     public void rotateModulesToAngle(double angleDeg) {
         for(SwerveModule mod : m_swerveMods) {
-            mod.rotateToAngle(angleDeg);
+            mod.setAngle(angleDeg);
         }    
     }
 
@@ -352,7 +345,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // but could be useful for other purposes.
     public void rotateModulesToAngles( double angleDeg[] ) {
         for(SwerveModule mod : m_swerveMods) {
-            mod.rotateToAngle(angleDeg[mod.m_modNum] );
+            mod.setAngle(angleDeg[mod.m_modNum] );
         }
     }
 

@@ -5,7 +5,8 @@
 package frc.robot;
 
 
-import edu.wpi.first.wpilibj.DigitalOutput;
+//import com.ctre.phoenix6.SignalLogger;
+
 import edu.wpi.first.wpilibj.TimedRobot;
 /*
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -38,7 +39,6 @@ public class Robot extends TimedRobot {
                                         .withSize(5,3)
                                         .getEntry();
 */
-  DigitalOutput signalOut0 = new DigitalOutput(0);
   
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -49,7 +49,9 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
-    // SmartDashboard.putBoolean("Default DIO State", signalOut0.get());
+    // Start CTRE Logger with the default path - which is the first USB Flash 
+    // drive found. Be sure to install a thumb drive in a RoboRio USB port
+    //SignalLogger.start();
   }
 
   /**
@@ -61,7 +63,6 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    signalOut0.set(true);
     // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
@@ -70,7 +71,6 @@ public class Robot extends TimedRobot {
 
     //voltageEntry.setDouble(pdp.getVoltage());
     //SmartDashboard.putNumber("Batt Voltage", pdp.getVoltage());
-    signalOut0.set(false);
   }
 
   /** This function is called once each time the robot enters Disabled mode. */

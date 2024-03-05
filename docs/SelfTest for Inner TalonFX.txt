@@ -1,0 +1,114 @@
+Talon FX Self Test Response
+
+Inner Arm Falcon (ID 11)
+This device is connected to CANivore "CANivore" (C7BC34854E373553202020360D1911FF)
+Firmware Version: 24.2.0.0 (Phoenix 6)
+
+Invert State
+Invert State: PositiveIsClockwise
+
+
+Led State
+   LED   On Color   Off Color   On Time   Off Time
+ - LED 1 - Orange - Off - 0.288000 s - 0.288000 s
+ - LED 2 - Orange - Off - 0.288000 s - 0.288000 s
+Animation of LED
+
+Motor Status
+   Signal   Value
+ - Control Mode - DisabledOutput
+ - Bridge - BridgeReq_Brake
+ - Duty Cycle - 0.000000 frac
+ - Torque Current - -0.450000 A
+ - Supply Current - 0.000000 A
+ - Supply Voltage - 12.150000 V
+ - Inverted - PositiveIsClockwise
+
+Position And Velocity
+   Source   Position   Velocity
+ - Feedback - -0.361816 rotations - 0.000000 rotations per second
+ - Rotor - 0.295898 rotations - 0.000000 rotations per second
+ - Sensor - -0.361816 rotations - 0.000000 rotations per second
+
+Differential Position And Velocity
+ - Average - 0.000000 rotations - 0.000000 rotations per second
+ - Difference - 0.000000 rotations - 0.000000 rotations per second
+
+Peak Output
+   Mode   Forward   Reverse   Differential
+ - Duty Cycle - 0.799805 fractional - -0.799805 fractional - 2.000000 fractional
+ - Voltage - 16.000000 V - -16.000000 V - 32.000000 V
+ - Torque Amps - 800.000000 A - -800.000000 A - 1600.000000 A
+
+Limit Switch
+   Signal   Value   Set Position on limit   Value to set position on limit
+ - ForwardLimit - Open - False - 0.000000 rotations
+ - ReverseLimit - Open - False - 0.000000 rotations
+
+Details
+   Signal   Value
+ - System State - ControlDisabled
+ - FrcLock - Frc_Locked
+ - Pro Licensed - Licensed
+ - Season Pass Licensed - Licensed
+ - Robot Enable - Disabled
+ - Device Enable - Disabled
+ - Neutral mode - Brake
+ - Feedback device - FusedCANcoder
+ - Feedback device ID - 2
+ - Sensor to Mech Ratio - 1.000000 scalar
+ - Rotor to Sensor Ratio - 33.333302 scalar
+ - Rotor offset - 0.000000 rotations
+ - Device Temperature - 25.000000 ?
+ - Processor Temperature - 30.000000 ?
+
+PID Reference and Error
+   Name   Reference   Reference Slope   Error
+ - Position - 0.000000 rotations - 0.000000 rotations per second - 0.000000 rotations
+ - Velocity - 0.000000 rotations per second - 0.000000 rotations per second² - 0.000000 rotations per second
+
+PID Output
+   Name   Feed Forward   Proportional Out   Integrated Accum   Derivative Out   Total Out
+ - Percent Supply - 0.000000 fractional - 0.000000 fractional - 0.000000 fractional - 0.000000 fractional - 0.000000 fractional
+ - Motor Voltage - 0.000000 V - 0.000000 V - 0.000000 V - 0.000000 V - 0.000000 V
+ - Torque Current - 0.000000 A - 0.000000 A - 0.000000 A - 0.000000 A - 0.000000 A
+
+Differential PID Reference and Error
+   Name   Reference   Reference Slope   Error
+ - Position - 0.000000 rotations - 0.000000 rotations per second - 0.000000 rotations
+ - Velocity - 0.000000 rotations per second - 0.000000 rotations per second² - 0.000000 rotations per second
+
+Differential PID Output
+   Name   Feed Forward   Proportional Out   Integrated Accum   Derivative Out   Total Out
+ - Percent Supply - 0.000000 fractional - 0.000000 fractional - 0.000000 fractional - 0.000000 fractional - 0.000000 fractional
+ - Motor Voltage - 0.000000 V - 0.000000 V - 0.000000 V - 0.000000 V - 0.000000 V
+ - Torque Current - 0.000000 A - 0.000000 A - 0.000000 A - 0.000000 A - 0.000000 A
+
+Faults
+   Fault   Currently Faulted   Sticky Faulted
+ - Forward Hard Limit - False - False
+ - Reverse Hard Limit - False - False
+ - Forward Soft Limit - False - False
+ - Reverse Soft Limit - False - False
+ - Remote Sensor Data Invalid - False - True
+ - Missing Remote Limit Switch - False - False
+ - Missing Remote Soft Limit - False - False
+ - Hardware - False - False
+ - Processor Temperature - False - False
+ - Device Temperature - False - False
+ - Undervoltage - False - False
+ - Boot During Enable - False - False
+ - Bridge Brownout - False - True
+ - Using Unlicensed Feature - False - False
+ - Supply OverVoltage - False - False
+ - Unstable Supply Voltage - False - False
+ - Stator Current Limit - False - False
+ - Supply Current Limit - False - False
+ - Fused Sensor Out of Sync - False - True
+ - Using Fused CANcoder while unlicensed. - False - True
+ - Remote Sensor Position Overflow - False - False
+ - Remote Sensor Reset - False - True
+ - Missing Differential Talon FX - False - False
+Press "Blink" to clear sticky faults
+Phoenix Version: 24.1.0
+Build: Jan  8 2024 18:07:37

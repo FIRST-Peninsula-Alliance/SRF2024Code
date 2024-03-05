@@ -1,0 +1,46 @@
+CANCoder Self Test Response
+
+Inner Arm encoder (ID 2)
+This device is connected to CANivore "CANivore" (C7BC34854E373553202020360D1911FF)
+Firmware Version: 24.1.0.0 (Phoenix 6)
+
+Led State
+   LED   On Color   Off Color   On Time   Off Time
+ - LED 1 - Green - Off - 0.096000 s - 0.016000 s
+Animation of LED
+
+General Signals
+   Signal   Value
+ - Position - -0.362305 rotations
+ - Velocity - 0.000000 rotations per second
+ - Absolute Position - -0.364014 rotations
+ - Sensor Direction - CounterClockwise_Positive
+
+Other Sensor Details
+   Signal   Value   Direction   Description
+ - Raw Position - 0.000244 rotations - ^ - This is the raw, unfiltered position reported by CANcoder. This signal does not use the absolute sensor, nor any fusing algorithm. It is also not timesynced. If you wish to use a signal with timesync, use Position.
+ - Absolute Position - -0.364014 rotations - ^ - The position reported by the absolute sensor with the user-set offset and user-configured magnet offset.
+ - Absolute Position No Offset - 0.461670 rotations - ^ - The position reported by the absolute sensor without the user-set offset or the user-configured magnet offset.
+ - Absolute Sensor Range - Signed_PlusMinusHalf -  - The range that the absolute sensor uses, either signed [-180,+180) degrees or unsigned [0,360) degrees.
+ - Raw Velocity - 0.000000 rotations per second -  - This is the raw, unfiltered velocity reported by CANcoder. This signal does not use the absolute sensor, nor any fusing algorithm. It is also not timesynced. If you wish to use a signal with timesync, use Velocity.
+
+Miscellaneous Details
+Bus Voltage: 12.250000 V
+Magnet Health: Magnet_Green
+
+Faults
+   Fault   Currently Faulted   Sticky Faulted
+ - Hardware - False - False
+ - Undervoltage - False - True
+ - Boot During Enable - False - False
+ - Bad Magnet - False - True
+
+General Phoenix Details
+   Signal   Value
+ - FrcLock - Frc_Locked
+ - Pro Licensed - Licensed
+ - Season Pass Licensed - Licensed
+ - Robot Enable - Disabled
+Press "Blink" to clear sticky faults
+Phoenix Version: 24.1.0
+Build: Jan  8 2024 18:07:37

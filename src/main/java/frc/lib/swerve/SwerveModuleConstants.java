@@ -8,7 +8,7 @@ public class SwerveModuleConstants {
     public final int STEER_MOTOR_ID;
     public final int ENCODER_ID;
     public final Rotation2d ABS_ANG_OFFSET2D;
-    public final ShuffleboardLayout SBE_LAYOUT; 
+    public final ShuffleboardLayout SBE_LAYOUT;
 
     /**
      * Swerve Module Constants to be used when creating swerve modules.
