@@ -9,8 +9,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 //import com.ctre.phoenix6.signals.InvertedValue;
 //import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import java.util.function.DoubleSupplier;
-
 import com.ctre.phoenix6.StatusCode;
 //import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -32,7 +30,6 @@ public class IntakeSubsystem extends SubsystemBase {
     private static boolean m_intakeIsRunning = false;        // True when in Acquire / Eject mode
     private static double m_intakeSpeedFactor = IC.HOLD_NOTE;
     private double m_intakeBaseSpeed = IC.INTAKE_BASE_SPEED;
-    private double m_testIntakeSpeed;
     private static long m_startTime;
     //private DigitalInput m_intakeCompleteSensor = new DigitalInput(IC.INTAKE_SENSOR_PORT_ID);
 
@@ -80,16 +77,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public boolean isIntakeIdle() {
     return isIntakeStopped();
-  }
-
-  public void testDrive(DoubleSupplier intakeAxis) {
-    // This is only called by defaultIntakeCmd, and then only when the
-    // robot is enabled in Test mode.
-    m_testIntakeSpeed = intakeAxis.getAsDouble();
-    if (m_testIntakeSpeed > 1.0) m_testIntakeSpeed = .99;
-    if (m_testIntakeSpeed < -1.0) m_testIntakeSpeed = -.99;
-    m_intakeCtrl.Output = m_testIntakeSpeed;
-    m_intakeMotor.setControl(m_intakeCtrl);
   }
     
   public void maintainIntakeSpeed() {

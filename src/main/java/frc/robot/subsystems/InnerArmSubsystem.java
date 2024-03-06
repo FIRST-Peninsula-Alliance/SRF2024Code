@@ -62,7 +62,10 @@ public class InnerArmSubsystem extends SubsystemBase {
     configInnerArmCANcoder();
     configInnerArmMotor();
     setupInnerArmPublishing();
-    m_innerArmSetpoint = IAC.INDEXED_SPEAKER_GOAL_POS;
+    // Set boot-up inner arm setpoint to the safest possible position
+    m_innerArmSetpoint = IAC.VERTICAL_POS;
+    // Transfer default NOTE_PICKUP_POS to a variable so if needed it can
+    // be adjusted at runtime.
     m_innerArmNotePickupPosSetpoint = IAC.NOTE_PICKUP_POS;
   }
 
@@ -144,9 +147,20 @@ public class InnerArmSubsystem extends SubsystemBase {
 
   public boolean innerArmIsAt(double position) {
     if (Math.abs(getAbsInnerArmPos() - position) < IAC.ALLOWED_INNER_ARM_POS_ERROR) {
+      // Arm has arrived at setpoint.
       return true;
+    } else if ((System.currentTimeMillis() - m_startTime) <= IAC.ALLOWED_MILLIS_PER_MOVE) {
+      // general timeout has not yet expired.
+      return false;
+    } else if ((position == IAC.VERTICAL_POS) &&
+               (System.currentTimeMillis() - m_startTime) <= IAC.ALLOWED_MILLIS_FOR_MOVE_TO_VERTICAL) {
+      // extended VERTICAL_POS timeout has not yet expired
+      return false;
     } else {
-      return ((System.currentTimeMillis() - m_startTime) > IAC.ALLOWED_MILLIS_PER_MOVE);
+      // timeout has occured. Print a message and report arm is at setpoint to 
+      // avoid "hanging" the state machine.
+      System.out.println("InnerArm move to setpoint "+position+" resulted in timeout");
+      return true;
     }
   }
   

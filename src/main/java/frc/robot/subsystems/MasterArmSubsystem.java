@@ -348,7 +348,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case RECOVER_FROM_BAD_NOTE_PICKUP:
-        // TBD
+        // TBD. Fow now, do nothing.
       case DEBUG_HOLD:
       default:
         // Nothing to do
@@ -589,45 +589,22 @@ public class MasterArmSubsystem extends SubsystemBase {
 
   private boolean isMasterArmAt(double position) {
     if (Math.abs(getAbsMasterArmPos() - position) < MAC.ALLOWED_MASTER_ARM_POS_ERROR) {
+      // MasterArm has reached setpoint
       return true;
+    } else if ((System.currentTimeMillis() - m_startTime) <= MAC.ALLOWED_MILLIS_PER_MOVE) {
+      // Timeout has not yet occured
+      return false;
     } else {
       // PID is agressive, and seemingly very reliable, but not perfect at
       // getting to final setpoint within desired tolerances. So even if not yet at 
       // final setpoint according to the encoder, if timeout occurs, just
       // assume we are close enough, so as not to "hang" the state machine.
-      // There is considerable danger in this approach, given potential mechanical
+      // There is some danger in this approach, given potential mechanical
       // collisions, if a sensor fails during a match.
-      return ((System.currentTimeMillis() - m_startTime) > MAC.ALLOWED_MILLIS_PER_MOVE);
+      System.out.println("MasterArm move to setpoint "+position+" resulted in timeout");
+      return true;
     }
   }    
-
-  private boolean masterArmIsAtPickupPos() {
-    return isMasterArmAt(m_maNotePickupPosSetpoint);
-  }
-
-  private boolean masterArmIsAtLowSafeToRotateOutPos() {
-    return isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS);
-  }
-
-  private boolean masterArmIsAtLowSafeToRotateInPos() {
-    return isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_IN_POS);
-  }
-
-  private boolean masterArmIsAtHighSafeToRotateDownAndOutPos() {
-    return isMasterArmAt(MAC.HIGH_SAFE_TO_ROTATE_DOWN_AND_OUT_POS);
-  }
-
-  private boolean masterArmIsAtIndexedSpeakerPos() {
-    return isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS);
-  }
-
-  private boolean masterArmIsAtDistantSpeakerPos() {
-    return isMasterArmAt(MAC.DISTANT_SPEAKER_SHOT_POS);
-  }
-
-  private boolean masterArmIsAtAmpScoringPos() {
-    return isMasterArmAt(MAC.AMP_SHOT_POS);
-  }
 
   /*******************************************************************
    * Setup and Config routines
@@ -905,7 +882,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 3:
-        if (masterArmIsAtLowSafeToRotateOutPos()) {
+        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS)) {
           m_innerArmSubsystem.gotoBumperContactPos();     // Set innerArm moving, then wait for it
           changeSeqNoTo(4);
         }
@@ -919,7 +896,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 5:
-        if (masterArmIsAtPickupPos()) {
+        if (isMasterArmAt(m_maNotePickupPosSetpoint)) {
           m_innerArmSubsystem.gotoNotePickupPos();        // set innerArm moving to pickup Pos, then wait for it
           changeSeqNoTo(6);
         }
@@ -961,7 +938,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 3:
-        if (masterArmIsAtLowSafeToRotateOutPos()) {
+        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS)) {
           m_innerArmSubsystem.gotoVerticalPos();                // set innerArm moving, then wait for it
           changeSeqNoTo(4);
         }
@@ -975,22 +952,26 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 5:
-        if (masterArmIsAtLowSafeToRotateInPos()) {
-          m_innerArmSubsystem.gotoSpeakerShotPos(false);  // set innerArm moving, then wait for it
+        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_IN_POS)) {
+          //m_innerArmSubsystem.gotoSpeakerShotPos(false);  // set innerArm moving, then wait for it
+          // We could eliminate this step now that default inner arm position is VERTICAL,
+          // but leave it in case we revert to indexed speaker shot position
+          m_innerArmSubsystem.gotoVerticalPos();            // set innerArm moving, then wait for it
           changeSeqNoTo(6);
         }
         break;
 
       case 6:
-        if (m_innerArmSubsystem.innerArmIsAtIndexedSpeakerPos()) {
-          gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);                     // set masterArm moving, then wait for it
-          m_innerArmSubsystem.gotoSpeakerShotPos(m_isDistantSpeakerShot);
+        // if (m_innerArmSubsystem.innerArmIsAtIndexedSpeakerPos()) {
+        if (m_innerArmSubsystem.innerArmIsVertical()) {
+          gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);       // set masterArm moving, then wait for it
+          //m_innerArmSubsystem.gotoSpeakerShotPos(m_isDistantSpeakerShot);
           changeSeqNoTo(7);
         }
         break;
 
       case 7:
-        if (masterArmIsAtIndexedSpeakerPos()) {
+        if (isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS)) {
           changeNoteStateTo(Repetoire.WAIT_FOR_SPECIFIED_GOAL);
         }
         break;
@@ -1032,11 +1013,11 @@ public class MasterArmSubsystem extends SubsystemBase {
         if (m_isDistantSpeakerShot) {
           m_armsAreReadyToShoot = m_innerArmSubsystem.innerArmIsAtDistantSpeakerPos()
                                   &&
-                                  masterArmIsAtDistantSpeakerPos();
+                                  isMasterArmAt(MAC.DISTANT_SPEAKER_SHOT_POS);
         } else {
           m_armsAreReadyToShoot = m_innerArmSubsystem.innerArmIsAtIndexedSpeakerPos()
                                   &&
-                                  masterArmIsAtIndexedSpeakerPos();
+                                  isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS);
         }
         if ((m_shooterSubsystem.isReadyToShoot() && m_armsAreReadyToShoot)
             ||
@@ -1106,7 +1087,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 3:
-        if (masterArmIsAtLowSafeToRotateOutPos()) {
+        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS)) {
           m_innerArmSubsystem.gotoHorizontalBackPos();            // set innerArm moving, then wait for it
           changeSeqNoTo(4);
         }
@@ -1120,7 +1101,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 5:
-        if (masterArmIsAtHighSafeToRotateDownAndOutPos()) {
+        if (isMasterArmAt(MAC.HIGH_SAFE_TO_ROTATE_DOWN_AND_OUT_POS)) {
           m_innerArmSubsystem.gotoAmpShotPos();                   // set innerArm moving, then wait for it
           changeSeqNoTo(6);
         }
@@ -1134,7 +1115,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 7:
-        if (masterArmIsAtAmpScoringPos()) {
+        if (isMasterArmAt(MAC.AMP_SHOT_POS)) {
           changeNoteStateTo(Repetoire.WAIT_TO_SCORE_AMP);
         }
         break;
@@ -1211,22 +1192,26 @@ public class MasterArmSubsystem extends SubsystemBase {
       break;
 
     case 5:
-      if (masterArmIsAtLowSafeToRotateInPos()) {
-        m_innerArmSubsystem.gotoSpeakerShotPos(false);  // set innerArm moving, then wait for it
+      if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_IN_POS)) {
+        //m_innerArmSubsystem.gotoSpeakerShotPos(false);  // set innerArm moving, then wait for it
+        m_innerArmSubsystem.gotoVerticalPos();            // Could delete this step now that innerarm idle
+                                                          // position is Vertical, but keep in case
+                                                          // of reversion to indexedSpeakerShotPos
         changeSeqNoTo(6);
       }
       break;
 
     case 6:
-      if (m_innerArmSubsystem.innerArmIsAtIndexedSpeakerPos()) {
+      //if (m_innerArmSubsystem.innerArmIsAtIndexedSpeakerPos()) {
+      if (m_innerArmSubsystem.innerArmIsVertical()) {
         gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);                     // set masterArm moving, then wait for it
-        m_innerArmSubsystem.gotoSpeakerShotPos(m_isDistantSpeakerShot);
+        //m_innerArmSubsystem.gotoSpeakerShotPos(m_isDistantSpeakerShot);
         changeSeqNoTo(7);
       }
       break;
 
     case 7:
-      if (masterArmIsAtIndexedSpeakerPos()) {
+      if (isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS)) {
         changeNoteStateTo(Repetoire.NOTE_HANDLER_IDLE);
       }
       break;

@@ -101,7 +101,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue INNER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
         
         public static final int INNER_ARM_CANCODER_ID = 2;
-        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = .57;  // was .1713867;  // was.28955;      //was 0.2853;       // rotations
+        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = .5783;  // was .1713867;  // was.28955;      //was 0.2853;       // rotations
         public static final AbsoluteSensorRangeValue INNER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue INNER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -137,14 +137,27 @@ public final class NotableConstants {           // As in all these constants are
 
         public static final double DISTANT_SPEAKER_GOAL_POS = -0.344;
         public static final double INDEXED_SPEAKER_GOAL_POS = -.35;         // was -0.336;
+        // VERTICAL for the inner arm means intake fingers pointing up,
+        // and rotation up from the Zero position of fingers horizontal
+        // pointing forward is reported as a negative rotation by the
+        // inner arm absolute CANcoder.
         public static final double VERTICAL_POS             = -0.25;
         public static final double BUMPER_CONTACT_POS       =  0.10;
         public static final double NOTE_PICKUP_POS          =  0.099999;     // was 0.145;       public static final double HORIZONTAL_FORWARD_POS   =  0.0;
         public static final double HORIZONTAL_BACK_POS      =  -.5;
-        public static final double AMP_GOAL_POS             = -1.05;    // was -.9;
+        public static final double AMP_GOAL_POS             = 0.02;    // was -.9;
 
         public static final double ALLOWED_INNER_ARM_POS_ERROR  = 1.5 / 360;
-        public static final double ALLOWED_MILLIS_PER_MOVE = 400;
+        // public static final double ALLOWED_MILLIS_PER_MOVE = 400;
+        // For testing only, make the timeout per move 2 seconds instead of 400 ms.
+        // This should allow checking the impact of actual setpoint arrival timing,
+        // if slower than the prior timeouts. Also add to code a printout statement
+        // whenever a timeout (vs actual setpoint arrival) causes a state 
+        // or sub-state transition.
+        public static final double ALLOWED_MILLIS_PER_MOVE = 2000;
+        // Always allow additional time for a move to vertical ("safe" position)
+        public static final double ALLOWED_MILLIS_FOR_MOVE_TO_VERTICAL = 1000;
+
 
         // to ensure inner arm always rotates in desired direction,
         // do not enable continuoue mode.

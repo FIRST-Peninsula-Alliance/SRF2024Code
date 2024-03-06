@@ -57,7 +57,7 @@ public class RumbleCmd extends Command {
   @Override
   public void initialize() {
     m_startTime = System.currentTimeMillis();
-    // tried using kBothRumble, did not sem to work, so drive each separately
+    // tried using kBothRumble, did not seem to work, so drive each separately
     if ((m_whichSide == 1) || (m_whichSide == 3)) {
       m_xbox.setRumble(RumbleType.kLeftRumble, m_amplitude);
     }
