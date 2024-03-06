@@ -198,7 +198,7 @@ public class ClimbSubsystem extends SubsystemBase {
     StatusCode status = m_climbMotor.getConfigurator().apply(climbConfig);
 
     if (! status.isOK() ) {
-        SmartDashboard.putString("Failed to apply Climb Motor configs ", " Error code: "+status.toString());
+        System.out.println("Failed to apply Climb Motor configs. Error code: "+status.toString());
     }
   }
 }

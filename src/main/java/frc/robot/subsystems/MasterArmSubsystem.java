@@ -78,6 +78,7 @@ public class MasterArmSubsystem extends SubsystemBase {
   private boolean m_isSafeToReturn;
   private boolean m_noWaitToScore;
   private boolean m_armsAreReadyToShoot;
+  private double m_avgMasterRawAbsPos;
   
     /********************************************************
    * MasterArmSubsystem needs access to 3 other subsystems
@@ -133,13 +134,14 @@ public class MasterArmSubsystem extends SubsystemBase {
     configMasterArmMotor();
   //  m_intakeSubsystem.setDefaultCommand(DefaultIntakeCmd(m_intakeSubsystem, ()->RobotContainer.getHidXboxCtrl().getLeftY()));
     changeNoteStateTo(Repetoire.NOTE_HANDLER_IDLE);
+    m_pendingNote = m_nowPlaying;
     m_innerArmSubsystem.gotoVerticalPos();
     m_isDistantSpeakerShot = false;
     m_noWaitToScore = false;
     m_isSafeToReturn = false;
     setupMasterArmPublishing();
+    m_avgMasterRawAbsPos = getAbsMasterArmPos() - MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET;
     gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);
-    m_pendingNote = m_nowPlaying;
   }
 
   /**************************************************************
@@ -656,7 +658,7 @@ public class MasterArmSubsystem extends SubsystemBase {
     StatusCode status = m_masterArmMotor.getConfigurator().apply(masterArmConfig);
 
     if (! status.isOK() ) {
-        SmartDashboard.putString("Failed to apply MASTER_ARM configs ", " Error code: "+status.toString());
+        System.out.println("Failed to apply MASTER_ARM configs. Error code: "+status.toString());
     }
   }
 
@@ -667,7 +669,7 @@ public class MasterArmSubsystem extends SubsystemBase {
     var ccConfig = new CANcoderConfiguration().withMagnetSensor(magnetSensorConfigs);
     StatusCode status = m_masterArmEncoder.getConfigurator().apply(ccConfig);
     if (! status.isOK() ) {
-        SmartDashboard.putString("Failed to apply MASTER_ARM configs ", " Error code: "+status.toString());
+        System.out.println("Failed to apply MASTER CANcoder configs. Error code: "+status.toString());
     }
   }
 
@@ -692,11 +694,6 @@ public class MasterArmSubsystem extends SubsystemBase {
     m_masterArmSetpoint2Entry = sbTestSetpointsLayout.add("MA Test SP2", MAC.HIGH_SAFE_TO_ROTATE_DOWN_AND_OUT_POS).getEntry();
     m_innerArmSetpoint1Entry  = sbTestSetpointsLayout.add("IA Test SP1", IAC.HORIZONTAL_FORWARD_POS).getEntry();
     m_innerArmSetpoint2Entry  = sbTestSetpointsLayout.add("IA Test SP2", IAC.VERTICAL_POS).getEntry();
-  
-    SmartDashboard.putNumber("MA SP1", MAC.MASTER_ARM_HORIZ_POS);
-    SmartDashboard.putNumber("MA SP2", MAC.LOW_SAFE_TO_ROTATE_OUT_POS);
-    SmartDashboard.putNumber("IA SP1", IAC.HORIZONTAL_FORWARD_POS);
-    SmartDashboard.putNumber("IA SP2", IAC.VERTICAL_POS );
 */
     // Setup the "Master Arm" data list
     ShuffleboardLayout sbLayout = sbt.getLayout("Master Arm", BuiltInLayouts.kList)
@@ -747,7 +744,8 @@ public class MasterArmSubsystem extends SubsystemBase {
     // Shuffleboard is notoriously fickle, sometimes stop live data updates.
     // Post critical data to SmartDashboard in parallel
     // SmartDashboard.putNumber("MasterEncRelPos ", m_masterArmEncoder.getPosition().getValueAsDouble());
-    SmartDashboard.putNumber("MasterRawAbsPos ", getAbsMasterArmPos()-MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET);
+    m_avgMasterRawAbsPos = ((m_avgMasterRawAbsPos * .95) + ((getAbsMasterArmPos()-MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET) * .05));
+    SmartDashboard.putNumber("MasterAvgRawAbsPos ", m_avgMasterRawAbsPos);
     SmartDashboard.putNumber("MasterCorrAbsPos ", getAbsMasterArmPos());
     SmartDashboard.putNumber("MasterMotorPos ", m_masterArmMotor.getPosition().getValueAsDouble());
   } 
@@ -854,8 +852,6 @@ public class MasterArmSubsystem extends SubsystemBase {
     } else {
       m_currentSeqNo = newSeqNo;
     }
-    SmartDashboard.putNumber("SeqNo ", m_currentSeqNo);
-    SmartDashboard.putNumber("Pending SeqNo", m_pendingSeqNo);
   }
 
   public void resetSeqNo() {

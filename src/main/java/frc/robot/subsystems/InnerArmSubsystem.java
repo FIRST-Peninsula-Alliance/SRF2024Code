@@ -39,6 +39,7 @@ public class InnerArmSubsystem extends SubsystemBase {
 
   private double m_innerArmSetpoint;
   private double m_innerArmNotePickupPosSetpoint;
+  private double m_avgInnerRawAbsPos;
   private boolean m_isDistantSpeakerShot = false;
 
   private final MotionMagicVoltage m_innerArmMagicCtrl = new MotionMagicVoltage(0.0)
@@ -67,6 +68,8 @@ public class InnerArmSubsystem extends SubsystemBase {
     // Transfer default NOTE_PICKUP_POS to a variable so if needed it can
     // be adjusted at runtime.
     m_innerArmNotePickupPosSetpoint = IAC.NOTE_PICKUP_POS;
+    // Initialize avg Inner Arm Cancoder value
+    m_avgInnerRawAbsPos = getAbsInnerArmPos()-IAC.INNER_ARM_CANCODER_MAGNET_OFFSET;
   }
 
   /************************************************************************
@@ -244,7 +247,7 @@ public class InnerArmSubsystem extends SubsystemBase {
     StatusCode status = m_innerArmMotor.getConfigurator().apply(innerArmConfig);
 
     if (! status.isOK() ) {
-      SmartDashboard.putString("Failed to apply INNER_ARM configs ", " Error code: "+status.toString());
+      System.out.println("Failed to apply INNER_ARM configs. Error code: "+status.toString());
     }
   }
   
@@ -255,7 +258,7 @@ public class InnerArmSubsystem extends SubsystemBase {
     var ccConfig = new CANcoderConfiguration().withMagnetSensor(magnetSensorConfigs);
     StatusCode status = m_innerArmCANcoder.getConfigurator().apply(ccConfig);
     if (! status.isOK() ) {
-      SmartDashboard.putString("Failed to apply INNER_CANcoder configs ", " Error code: "+status.toString());
+      System.out.println("Failed to apply INNER_CANcoder configs. Error code: "+status.toString());
     }
   }
     
@@ -282,7 +285,8 @@ public class InnerArmSubsystem extends SubsystemBase {
   
   private void publishInnerArmData() {
     // SmartDashboard.putNumber("InnerCanRelPos ", m_innerArmCANcoder.getPosition().getValueAsDouble());
-    SmartDashboard.putNumber("InnerRawAbsPos ", getAbsInnerArmPos()-IAC.INNER_ARM_CANCODER_MAGNET_OFFSET);
+    m_avgInnerRawAbsPos = ((m_avgInnerRawAbsPos * .95) + ((getAbsInnerArmPos()-IAC.INNER_ARM_CANCODER_MAGNET_OFFSET) * .05));
+    SmartDashboard.putNumber("InnerAvgRawAbsPos ", m_avgInnerRawAbsPos);
     SmartDashboard.putNumber("InnerCorrAbsPos ", getAbsInnerArmPos());
     SmartDashboard.putNumber("InnerMotorPos ", m_innerArmMotor.getPosition().getValueAsDouble());
 

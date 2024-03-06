@@ -173,13 +173,13 @@ public class ShooterSubsystem extends SubsystemBase {
                                                  .withOpenLoopRamps(openLoopRampConfig);
     StatusCode status = m_shooterMotor.getConfigurator().apply(shooterConfig);
     if (! status.isOK()) {
-      SmartDashboard.putString("Failed to apply Shooter motor configs.", " Error code: "+status.toString());
+      System.out.println("Failed to apply Shooter motor configs. Error code: "+status.toString());
     }
   }
 
   private void reportRevError(REVLibError errorCode) {
     if (errorCode != REVLibError.kOk) {
-        SmartDashboard.putString("ShooterAimMotor RevLibError = ", errorCode.toString());
+        System.out.println("ShooterAimMotor RevLibError = "+errorCode.toString());
     }
   }
 
@@ -215,8 +215,8 @@ public class ShooterSubsystem extends SubsystemBase {
   public void publishShooterData() {
     SmartDashboard.putString("ShooterState ", m_shooterStatus.toString());
     SmartDashboard.putNumber("Aim sensor position ", m_integratedAimEncoder.getPosition());
-    SmartDashboard.putNumber("Shooter Voltage Out ",  m_shooterVoltageOut);
-    SmartDashboard.putNumber("Aim MotorAmps", m_aimMotor.getOutputCurrent());
+    // SmartDashboard.putNumber("Shooter Voltage Out ",  m_shooterVoltageOut);
+    // SmartDashboard.putNumber("Aim MotorAmps", m_aimMotor.getOutputCurrent());
 
   }
 

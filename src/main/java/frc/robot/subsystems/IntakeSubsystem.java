@@ -59,7 +59,6 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void ejectNote() {
-    SmartDashboard.putString("Intake ", " eject called");
     m_intakeIsRunning = true;
     m_intakeSpeedFactor = IC.EJECT_NOTE;
     m_intakeMotor.setControl(m_intakeCtrl.withOutput(m_intakeBaseSpeed * m_intakeSpeedFactor));
@@ -129,7 +128,7 @@ public class IntakeSubsystem extends SubsystemBase {
     StatusCode status = m_intakeMotor.getConfigurator().apply(intakeConfig);
 
     if (! status.isOK()) {
-      SmartDashboard.putString("Failed to apply Intake configs.", " Error code: "+status.toString());
+      System.out.println("Failed to apply Intake configs. Error code: "+status.toString());
     }
   }
 
