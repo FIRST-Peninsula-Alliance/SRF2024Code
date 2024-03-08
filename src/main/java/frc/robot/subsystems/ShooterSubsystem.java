@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems;
 
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
+
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -20,6 +23,9 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 // import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.util.FileRecorder;
+import frc.lib.util.FileRecorder.NoteEvent;
+import frc.lib.util.FileRecorder.NoteRequest;
 import frc.robot.Constants;
 import frc.robot.NotableConstants.SC;
 
@@ -44,6 +50,8 @@ public class ShooterSubsystem extends SubsystemBase {
   private boolean m_isFarShot;
   private long m_startTime;       // can share between Aim and Shooter, because they
                                   // are logically synced
+  private long  m_elapsedTime;
+  private double m_velocityError;
 
   private VoltageOut m_shooterRequest = new VoltageOut(SC.SHOOTER_VOLTAGE_OUT_NEAR)
                                                        .withEnableFOC(true)
@@ -56,8 +64,17 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   private ShooterState m_shooterStatus;
+  private Supplier<String> m_currentStateName;
+  private IntSupplier m_currentSeqNo;
+  private FileRecorder m_fileRecorder;
 
-  public ShooterSubsystem() {
+  public ShooterSubsystem(Supplier<String> currentStateName, 
+                         IntSupplier currentSeqNo,
+                         FileRecorder fileRecorder) {
+    m_currentStateName = currentStateName;
+    m_currentSeqNo = currentSeqNo;
+    m_fileRecorder = fileRecorder;
+  
     configShooterMotor();
     configAimingMotor();
     m_shooterStatus = ShooterState.IDLE;
@@ -80,6 +97,13 @@ public class ShooterSubsystem extends SubsystemBase {
     m_aimController.setReference(m_aimTargetPos, CANSparkMax.ControlType.kPosition);
     m_shooterStatus = ShooterState.PREPPING_TO_SHOOT;
     m_startTime = System.currentTimeMillis();
+    m_fileRecorder.recordShooterEvent(NoteRequest.SHOOTER_PREP,
+                                      m_startTime,
+                                      m_shooterTargetVel,
+                                      m_shooterVoltageOut,
+                                      m_aimTargetPos,
+                                      m_currentStateName.get(),
+                                      m_currentSeqNo.getAsInt());
   }
 
   public boolean isReadyToShoot() {
@@ -94,6 +118,13 @@ public class ShooterSubsystem extends SubsystemBase {
     // shot Amperage measurement, and a deterministic overall timeout for
     // completeion of a shot, so that the shooter motor can be stopped.
     m_startTime = System.currentTimeMillis();
+    m_fileRecorder.recordShooterEvent(NoteRequest.SHOOTER_SCORE,
+                                      m_startTime,
+                                      m_shooterTargetVel,
+                                      m_shooterVoltageOut,
+                                      m_aimTargetPos,
+                                      m_currentStateName.get(),
+                                      m_currentSeqNo.getAsInt());
   }
 
   public boolean isShotDetected() {
@@ -105,7 +136,7 @@ public class ShooterSubsystem extends SubsystemBase {
     // If no shot is detected then there is no time out, so MasterArmSubsystem 
     // has its own timeout to ensure the shooter motor is stopped.
     // But the amperage test is still useful - it allows faster response (when it works).
-      return (m_shooterStatus == ShooterState.SHOT_DETECTED);
+    return (m_shooterStatus == ShooterState.SHOT_DETECTED);
   }
 
   public void cancelShooter() {
@@ -114,6 +145,13 @@ public class ShooterSubsystem extends SubsystemBase {
     // timing out after the call to eject.
     m_shooterMotor.setControl(m_shooterRequest.withOutput(0.0));
     m_shooterStatus = ShooterState.IDLE;
+    m_fileRecorder.recordShooterEvent(NoteRequest.CANCEL_SHOT,
+                                      System.currentTimeMillis(),
+                                      m_shooterTargetVel,
+                                      m_shooterVoltageOut,
+                                      m_aimTargetPos,
+                                      m_currentStateName.get(),
+                                      m_currentSeqNo.getAsInt());
   }
 
   /**********************************************
@@ -231,25 +269,61 @@ public class ShooterSubsystem extends SubsystemBase {
         break;
 
       case PREPPING_TO_SHOOT:
-        if (((Math.abs(m_integratedAimEncoder.getPosition() - m_aimTargetPos) 
-             <= SC.ALLOWED_SHOOTER_AIM_ERROR)
-             && 
-             (m_shooterMotor.getVelocity().getValueAsDouble() > m_shooterTargetVel)
-            )
-            ||
-            (System.currentTimeMillis() - m_startTime > 700)) {
+        m_elapsedTime = System.currentTimeMillis() - m_startTime;
+        m_velocityError = m_shooterTargetVel - m_shooterMotor.getVelocity().getValueAsDouble();
+        if (m_elapsedTime > 700) {
+          m_fileRecorder.recordMoveEvent("Shooter, ",
+                                         NoteEvent.TIMEOUT_OCCURED,
+                                         m_shooterTargetVel,
+                                         m_velocityError,
+                                         System.currentTimeMillis(),
+                                         m_elapsedTime,
+                                         m_currentStateName.get(),
+                                         m_currentSeqNo.getAsInt());
           m_shooterStatus = ShooterState.WAITING_FOR_SHOT;
+          break;
+        }
+
+        if ((Math.abs(m_integratedAimEncoder.getPosition() - m_aimTargetPos) <= SC.ALLOWED_SHOOTER_AIM_ERROR)
+            && 
+            (m_shooterMotor.getVelocity().getValueAsDouble() > m_shooterTargetVel)) {
+          m_shooterStatus = ShooterState.WAITING_FOR_SHOT;
+          m_fileRecorder.recordMoveEvent("Shooter, ",
+                                         NoteEvent.SETPOINT_REACHED,
+                                         m_shooterMotor.getVelocity().getValueAsDouble(),
+                                         m_integratedAimEncoder.getPosition(),
+                                         System.currentTimeMillis(),
+                                         m_elapsedTime,
+                                         m_currentStateName.get(),
+                                         m_currentSeqNo.getAsInt());
         }
         break;
 
       case WAITING_FOR_SHOT:
         // Look for current spike and set ShooterState to SHOT_DETECTED
         // if found
+        m_elapsedTime = System.currentTimeMillis() - m_startTime;
         if (m_shooterMotor.getSupplyCurrent().getValueAsDouble()
             >
             SC.AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION) {
+          m_fileRecorder.recordMoveEvent("Shooter, ",
+                                         NoteEvent.SHOT_DETECTED,
+                                         m_shooterMotor.getVelocity().getValueAsDouble(),
+                                         m_shooterMotor.getSupplyCurrent().getValueAsDouble(),
+                                         System.currentTimeMillis(),
+                                         m_elapsedTime,
+                                         m_currentStateName.get(),
+                                         m_currentSeqNo.getAsInt());
           m_shooterStatus = ShooterState.SHOT_DETECTED;
-        } else if ((System.currentTimeMillis() - m_startTime) > 600) {
+        } else if (m_elapsedTime > 600) {
+          m_fileRecorder.recordMoveEvent("Shooter (wait shot detected), ",
+                                         NoteEvent.TIMEOUT_OCCURED,
+                                         SC.AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION,
+                                         m_shooterMotor.getSupplyCurrent().getValueAsDouble(),
+                                         System.currentTimeMillis(),
+                                         m_elapsedTime,
+                                         m_currentStateName.get(),
+                                         m_currentSeqNo.getAsInt());
           m_shooterStatus = ShooterState.SHOT_DETECTED;     // timeout occured, so just pretend spike happened
         }
         break;

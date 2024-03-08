@@ -80,7 +80,8 @@ public final class NotableConstants {           // As in all these constants are
         public static final double MASTER_ARM_HORIZ_POS = 0.0;
 
         public static final double ALLOWED_MASTER_ARM_POS_ERROR  = 1.5 / 360;
-        public static final double ALLOWED_MILLIS_PER_MOVE = 500;
+        public static final long ALLOWED_MILLIS_MA_SMALL_MOVE = 400;
+        public static final long ALLOWED_MILLIS_MA_LARGE_MOVE = 2000;
 
         public static final double MAX_MASTER_ARM_ROTATIONS = 0.28;
         public static final double MIN_MASTER_ARM_ROTATIONS = -0.25;
@@ -88,8 +89,6 @@ public final class NotableConstants {           // As in all these constants are
         public static final int MASTER_ARM_DATA_COL = 0;
         public static final int MASTER_ARM_DATA_ROW = 0;
         public static final int MASTER_ARM_DATA_LIST_HGT = 8;
-
-        public static final int MASTER_ARM_MOVEMENT_TIMEOUT = 800;   // ms
     }
 
     /*************************************************************
@@ -101,7 +100,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue INNER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
         
         public static final int INNER_ARM_CANCODER_ID = 2;
-        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = .5783;  // was .1713867;  // was.28955;      //was 0.2853;       // rotations
+        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = .58999;  // was .1713867;  // was.28955;      //was 0.2853;       // rotations
         public static final AbsoluteSensorRangeValue INNER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue INNER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -147,17 +146,17 @@ public final class NotableConstants {           // As in all these constants are
         public static final double HORIZONTAL_BACK_POS      =  -.5;
         public static final double AMP_GOAL_POS             = 0.02;    // was -.9;
 
-        public static final double ALLOWED_INNER_ARM_POS_ERROR  = 1.5 / 360;
-        // public static final double ALLOWED_MILLIS_PER_MOVE = 400;
-        // For testing only, make the timeout per move 2 seconds instead of 400 ms.
-        // This should allow checking the impact of actual setpoint arrival timing,
-        // if slower than the prior timeouts. Also add to code a printout statement
-        // whenever a timeout (vs actual setpoint arrival) causes a state 
-        // or sub-state transition.
-        public static final double ALLOWED_MILLIS_PER_MOVE = 2000;
-        // Always allow additional time for a move to vertical ("safe" position)
-        public static final double ALLOWED_MILLIS_FOR_MOVE_TO_VERTICAL = 1000;
+        public static final double ALLOWED_INNER_ARM_POS_ERROR  = 5 / 360;
 
+        // For testing and tuning, make the timeout per move 2 seconds and 500 ms
+        // for large and small moves, respectively, and log the results using
+        // FileRecorder. 
+        // Note the avg times to setpoint, but use max times to setpoint when entering
+        // final timeout values. 
+        // Retest with different ALLOWED_INNER_ARM_POS_ERROR values to find optimal 
+        // tolerance value for MotionMagicVoltage PID being used.
+        public static final long ALLOWED_MILLIS_IA_SMALL_MOVE = 400;
+        public static final long ALLOWED_MILLIS_IA_LARGE_MOVE = 2000;
 
         // to ensure inner arm always rotates in desired direction,
         // do not enable continuoue mode.
@@ -167,8 +166,6 @@ public final class NotableConstants {           // As in all these constants are
         public static final int INNER_ARM_DATA_COL = 2;
         public static final int INNER_ARM_DATA_ROW = 0;
         public static final int INNER_ARM_DATA_LIST_HGT = 8;
-
-        public static final int INNER_ARM_MOVEMENT_TIMEOUT = 400;   // ms
     }
 
 /********************************************************************

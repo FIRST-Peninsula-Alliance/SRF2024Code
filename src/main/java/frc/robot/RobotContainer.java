@@ -110,7 +110,12 @@ public class RobotContainer {
         //    L Joystick Button     => Set Field Oriented drive
         //    R Joystick Button     => Set Robot Oriented drive
         //    Back                  => Zero the Gyro
-        //    Start                 => Single step if in debug mode
+        //    Start                 => Single step through Note states if in debug mode
+        //    ALT + Start           => Reset Inner Arm CANcoder Magnet Offset (lasts only 
+        //                              until power cycle, or new code deployment).
+        //                              Use ONLY with calibration stick in place,
+        //                              and both Arms horizontal. Edit new offset into
+        //                              NotableConstants.java if happy with it.
         //    ALT + Back            => Simulate "end of match" period
         //    Left Trigger          => Simulate note acquired
         //    ALT + POV_UP          => extend elevator @ fixed speed when held (can get slower speed with Right Bumper)
@@ -154,6 +159,7 @@ public class RobotContainer {
         m_xbox.rightTrigger(0.5).and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.scoreNote()));
         ALT.and(m_xbox.rightTrigger(0.5)).onTrue(new InstantCommand(()->m_masterArmSubsystem.discardNote()));
         m_xbox.start().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.stepPastDebugHold()));
+        ALT.and(m_xbox.start()).onTrue(new InstantCommand(()->m_masterArmSubsystem.resetInnerArmMagnetOffset()));
         m_xbox.leftTrigger().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.simulateNoteAcquired()));
     
         // ALT.and(m_xbox.leftStick()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.setTestAim(false)));
@@ -185,10 +191,8 @@ public class RobotContainer {
         ALT.and(m_xbox.povUp()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopElevator()));
         ALT.and(m_xbox.povDown()).onTrue(new InstantCommand(()-> m_climbSubsystem.lowerElevator()));
         ALT.and(m_xbox.povDown()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopElevator()));
-        ALT.and(m_xbox.leftTrigger()).onTrue(new InstantCommand(()-> m_climbSubsystem.runClimbWinch(1.0)));
+        ALT.and(m_xbox.leftTrigger()).onTrue(new InstantCommand(()-> m_climbSubsystem.runClimbWinch()));
         ALT.and(m_xbox.leftTrigger()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopClimbWinch()));
-        ALT.and(m_xbox.povLeft()).onTrue(new InstantCommand(()-> m_climbSubsystem.runClimbWinch(-1.0)));
-        ALT.and(m_xbox.povLeft()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopClimbWinch()));
         ALT.and(m_xbox.back()).onTrue(new InstantCommand(()->m_climbSubsystem.overrideEndOfMatchSafety()));
     }
 

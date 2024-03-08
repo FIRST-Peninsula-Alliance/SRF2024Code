@@ -16,7 +16,6 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
 
-import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -82,21 +81,15 @@ public class ClimbSubsystem extends SubsystemBase {
    * Methods to start and stop the climbing winch,
    * Bound to .onTrue and .onFalse states of a single button
    *************************************************************/
-  public void runClimbWinch(double direction) {     // single speed, single direction
-    System.out.println("Run winch called");
+  public void runClimbWinch() {     // single speed, single direction
     if (m_elevatorHasBeenDeployed && 
         ((Timer.getMatchTime() < CC.SAFETY_THRESHOLD_TIME_BEFORE_MATCH_END) 
         ||
         m_safetyInterlockRemoved)) {
-      if ((Math.abs(direction) != 1.0) || ((direction == -1.0) && (! RobotState.isTest()))) {
-        System.out.println("Run winch ignored: Robot State not TEST, or bad dir "+direction);
-        return;
-      }
-      //System.out.println("Run Winch "+direction);
       m_climbMotorFactor = 1.0;
       m_climbStartTime = System.currentTimeMillis();
     } else {
-      System.out.println("Run wincg ignored: either no elevator or too soon");
+      System.out.println("Run winch ignored: either no elevator or too soon");
     }
   }
 

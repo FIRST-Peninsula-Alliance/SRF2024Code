@@ -1,5 +1,6 @@
 package frc.robot;
 
+import java.text.DecimalFormat;
 import java.util.Map;
 
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
@@ -27,6 +28,18 @@ public final class Constants {
      ***************************************************/
     public static final String CANIVORE_BUS_NAME = "CANivore";
     public static final String ROBO_RIO_BUS_NAME = "Rio";
+
+    public static final class F {
+        // Formatters to control number of decimal places 
+        // in the various published / recorded data
+        public static DecimalFormat df1 = new DecimalFormat("#.#");
+        public static DecimalFormat df2 = new DecimalFormat("#.##");
+        public static DecimalFormat df3 = new DecimalFormat("#.###");
+        public static DecimalFormat df4 = new DecimalFormat("#.####");
+        public static DecimalFormat df20 = new DecimalFormat("##");
+        public static DecimalFormat df40 = new DecimalFormat("####");
+        public static DecimalFormat df80 = new DecimalFormat("########");
+    }
 
     /****************************************************
      * User Interface Constants
@@ -372,7 +385,7 @@ public final class Constants {
         public static final double ELEVATOR_MIN_POS = -2.0;
         public static final double ELEVATOR_MAX_POS = 122.0;
 
-        public static final double CLIMBER_DUTY_CYCLE = 0.5;
+        public static final double CLIMBER_DUTY_CYCLE = 1.0;
         public static final double ELEVATOR_DUTY_CYCLE = 0.32;
         public static final double ELEVATOR_SAFETY_THRESHOLD_CURRENT_LIMIT = 20;
         public static final long ELEVATOR_INRUSH_LOCKOUT_TIME = 350;      // ms

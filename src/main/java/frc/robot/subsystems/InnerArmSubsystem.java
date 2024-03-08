@@ -4,8 +4,9 @@
 
 package frc.robot.subsystems;
 
-import java.text.DecimalFormat;
 import java.util.Map;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -30,7 +31,11 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.util.FileRecorder;
+import frc.lib.util.FileRecorder.NoteEvent;
+import frc.lib.util.FileRecorder.NoteRequest;
 import frc.robot.Constants;
+import frc.robot.Constants.F;
 import frc.robot.NotableConstants.IAC;
 
 public class InnerArmSubsystem extends SubsystemBase {
@@ -40,13 +45,18 @@ public class InnerArmSubsystem extends SubsystemBase {
   private double m_innerArmSetpoint;
   private double m_innerArmNotePickupPosSetpoint;
   private double m_avgInnerRawAbsPos;
+  private double m_avgRawHomePos;
+  private double m_magnetOffset = IAC.INNER_ARM_CANCODER_MAGNET_OFFSET;
+  private int m_count = 0;
   private boolean m_isDistantSpeakerShot = false;
 
   private final MotionMagicVoltage m_innerArmMagicCtrl = new MotionMagicVoltage(0.0)
                                                                                 .withSlot(0)
                                                                                 .withEnableFOC(true);
   private long m_startTime;
+  private long m_absPosMeasurementCount = 0;
 
+  private GenericEntry m_magnetOffsetEntry;
   private GenericEntry m_absAxlePosEntry;
   private GenericEntry m_falconPosEntry;
   private GenericEntry m_armSetpointEntry;
@@ -54,12 +64,19 @@ public class InnerArmSubsystem extends SubsystemBase {
   private GenericEntry m_axleVelocityEntry;
   private GenericEntry m_falconAmpsEntry;
 
-  // Formatters to control number of decimal places in the published data lists
-  DecimalFormat df1 = new DecimalFormat("#.#");
-  DecimalFormat df3 = new DecimalFormat("#.###");
+  private Supplier<String> m_currentStateName;
+  private IntSupplier m_currentSeqNo;
+  private double m_positionError;
+  private long m_elapsedTime;
+  private FileRecorder m_fileRecorder;
 
   /** Creates a new InnerArmSubsystem. */
-  public InnerArmSubsystem() {
+  public InnerArmSubsystem(Supplier<String> currentStateName, 
+                           IntSupplier currentSeqNo,
+                           FileRecorder fileRecorder) {
+    m_currentStateName = currentStateName;
+    m_currentSeqNo = currentSeqNo;
+    m_fileRecorder = fileRecorder;
     configInnerArmCANcoder();
     configInnerArmMotor();
     setupInnerArmPublishing();
@@ -69,7 +86,7 @@ public class InnerArmSubsystem extends SubsystemBase {
     // be adjusted at runtime.
     m_innerArmNotePickupPosSetpoint = IAC.NOTE_PICKUP_POS;
     // Initialize avg Inner Arm Cancoder value
-    m_avgInnerRawAbsPos = getAbsInnerArmPos()-IAC.INNER_ARM_CANCODER_MAGNET_OFFSET;
+    m_avgInnerRawAbsPos = getRawInnerArmPos();
   }
 
   /************************************************************************
@@ -107,37 +124,31 @@ public class InnerArmSubsystem extends SubsystemBase {
    *********************************/
 
   public boolean innerArmIsVertical() {
-    return innerArmIsAt(IAC.VERTICAL_POS);
+    return innerArmIsAt(IAC.VERTICAL_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
 
   public boolean innerArmIsAtBumperContactPos() {
-    return innerArmIsAt(IAC.BUMPER_CONTACT_POS);
+    return innerArmIsAt(IAC.BUMPER_CONTACT_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
 
   public boolean innerArmIsAtPickupPos() {
-    return innerArmIsAt(IAC.NOTE_PICKUP_POS);
+    return innerArmIsAt(IAC.NOTE_PICKUP_POS, IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
   }
 
   public boolean innerArmIsAtDistantSpeakerPos() {
-    return innerArmIsAt(IAC.DISTANT_SPEAKER_GOAL_POS);
+    return innerArmIsAt(IAC.DISTANT_SPEAKER_GOAL_POS, IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
   }
       
   public boolean innerArmIsAtIndexedSpeakerPos() {
-    return innerArmIsAt(IAC.INDEXED_SPEAKER_GOAL_POS);
+    return innerArmIsAt(IAC.INDEXED_SPEAKER_GOAL_POS, IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
   }
 
   public boolean innerArmIsHorizontalBackPos() {
-    return innerArmIsAt(IAC.HORIZONTAL_BACK_POS);
+    return innerArmIsAt(IAC.HORIZONTAL_BACK_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
   
   public boolean innerArmIsAtAmpScoringPos() {
-    return innerArmIsAt(IAC.AMP_GOAL_POS);
-  }
-
-  public void gotoPosition(double position) {
-    m_innerArmSetpoint = position;
-    m_innerArmMotor.setControl(m_innerArmMagicCtrl.withPosition(m_innerArmSetpoint));
-    m_startTime = System.currentTimeMillis();
+    return innerArmIsAt(IAC.AMP_GOAL_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
 
   // getAbsInnerArmPos returns the InnerArmEncoder sensor position
@@ -148,29 +159,63 @@ public class InnerArmSubsystem extends SubsystemBase {
     return(m_innerArmCANcoder.getAbsolutePosition().getValueAsDouble());
   }
 
-  public boolean innerArmIsAt(double position) {
-    if (Math.abs(getAbsInnerArmPos() - position) < IAC.ALLOWED_INNER_ARM_POS_ERROR) {
-      // Arm has arrived at setpoint.
+  public boolean innerArmIsAt(double position, long timeoutDuration) {
+    m_positionError = position - getAbsInnerArmPos();
+    m_elapsedTime = System.currentTimeMillis() - m_startTime;
+
+    if (Math.abs(m_positionError) < IAC.ALLOWED_INNER_ARM_POS_ERROR) {
+      m_fileRecorder.recordMoveEvent("IA",
+                                     NoteEvent.SETPOINT_REACHED,
+                                     position,
+                                     m_positionError,
+                                     System.currentTimeMillis(),
+                                     m_elapsedTime,
+                                     m_currentStateName.get(),
+                                     m_currentSeqNo.getAsInt());
       return true;
-    } else if ((System.currentTimeMillis() - m_startTime) <= IAC.ALLOWED_MILLIS_PER_MOVE) {
+    }
+
+    if (m_elapsedTime <= timeoutDuration) {
       // general timeout has not yet expired.
-      return false;
-    } else if ((position == IAC.VERTICAL_POS) &&
-               (System.currentTimeMillis() - m_startTime) <= IAC.ALLOWED_MILLIS_FOR_MOVE_TO_VERTICAL) {
-      // extended VERTICAL_POS timeout has not yet expired
-      return false;
+        return false;
     } else {
-      // timeout has occured. Print a message and report arm is at setpoint to 
-      // avoid "hanging" the state machine.
-      System.out.println("InnerArm move to setpoint "+position+" resulted in timeout");
+      // timeout has occured. Log event and force assume inner arm is at setpoint 
+      // in order to avoid "hanging" the state machine (hopefully it is close enough).
+      m_fileRecorder.recordMoveEvent( "IA",
+                                      NoteEvent.TIMEOUT_OCCURED,
+                                      position,
+                                      m_positionError,
+                                      System.currentTimeMillis(),
+                                      m_elapsedTime,
+                                      m_currentStateName.get(),
+                                      m_currentSeqNo.getAsInt() );
       return true;
     }
   }
   
- /*****************************************
-   * goto various inner arm position methods
-   * Called only from Master Arm sequencer
+  /*****************************************
+   * goto<various inner arm positions>
+   * Called only from Master Arm sequencer.
+   * All make use of support routine gotoPosition(),
+   * which also stores the current setpoint, 
+   * and initializes a motion start time
+   * for timeout purposes.
+   * Position units are always Rotations
+   * (1 rotation == 360 degrees). InnerArm
+   * ratio is 20:18 CANcoder:Axle.
    *****************************************/
+  public void gotoPosition(double position) {
+    m_innerArmSetpoint = position;
+    m_innerArmMotor.setControl(m_innerArmMagicCtrl.withPosition(m_innerArmSetpoint));
+    m_startTime = System.currentTimeMillis();
+    m_fileRecorder.recordReqEvent("IA",
+                                  NoteRequest.MOVE_INNER_ARM,
+                                  m_innerArmSetpoint,
+                                  m_startTime,
+                                  m_currentStateName.get(),
+                                  m_currentSeqNo.getAsInt());
+  }
+
   public void gotoVerticalPos() {
     gotoPosition(IAC.VERTICAL_POS);
   }
@@ -254,12 +299,62 @@ public class InnerArmSubsystem extends SubsystemBase {
   private void configInnerArmCANcoder() {
     var magnetSensorConfigs = new MagnetSensorConfigs().withAbsoluteSensorRange(IAC.INNER_ARM_CANCODER_RANGE)
                                                        .withSensorDirection(IAC.INNER_ARM_CANCODER_DIR)
-                                                       .withMagnetOffset(IAC.INNER_ARM_CANCODER_MAGNET_OFFSET);
+                                                       .withMagnetOffset(m_magnetOffset);
     var ccConfig = new CANcoderConfiguration().withMagnetSensor(magnetSensorConfigs);
     StatusCode status = m_innerArmCANcoder.getConfigurator().apply(ccConfig);
     if (! status.isOK() ) {
       System.out.println("Failed to apply INNER_CANcoder configs. Error code: "+status.toString());
     }
+  }
+
+  // This method returns the uncorrected CANcoder Absolute position.
+  public double getRawInnerArmPos() {
+    return (getAbsInnerArmPos()-m_magnetOffset);
+  }
+
+  public boolean innerArmHomeSensorIsTripped() {
+    return false;
+  }
+
+  // This method only works if an index sensor is added to allow InnerArm position to 
+  // be known absolutely, but independently of the CANcoder. Comparison of the two
+  // would allow checking that they are still in sync - if not, then this routine could be
+  // called. As written, this assumes an index sensor is located at the normal
+  // HOME, or IDLE position of the inner arm (IAC.VERTICAL_POS), where it spends aa
+  // fair amount of time.
+  public void checkMagnetOffset() {
+    if (innerArmHomeSensorIsTripped()) {
+      if (m_absPosMeasurementCount == 0) {
+        m_absPosMeasurementCount = 1;
+        m_avgRawHomePos = getRawInnerArmPos();
+      } else if (m_absPosMeasurementCount++ < 51) {
+        m_avgRawHomePos = (m_avgRawHomePos * .95) + (getRawInnerArmPos() * .05);
+      } else if (m_absPosMeasurementCount == 51) {
+        // CANcoder has been averaged for a full second while Home
+        // sensor is still active, so compare expected reading with current
+        // corrected reading. But only do this once per new arrival at sensor.
+        if (Math.abs(IAC.VERTICAL_POS - getAbsInnerArmPos()) > .003) {
+          m_magnetOffset = -m_avgRawHomePos;
+          configInnerArmCANcoder();
+        }
+      }
+    } else {
+      // reset the count - did not stay put long enough for a good average
+      m_absPosMeasurementCount = 0;
+    }
+  }
+
+  // This routine is designed to be called manually via an assigned button press,
+  // but only when the calibration stick is in place and both Arms are horizontal.
+  // Also, wait for average to stabilize - at least 5 seconds. As of now, only 
+  // used for InnerArm reset. The MasterArm is much more stable and does not need 
+  // frequent re-calibration.
+  // This reset is only good until the next RoboRio re-boot, so if happy with the
+  // new offset, edit the NotableConstants.java file at the earliest opportunity
+  // and change IAC.INNER_ARM_CANCODER_MAGNET_OFFSET to that new offset.
+  public void resetMagnetOffset() {
+    m_magnetOffset = -m_avgInnerRawAbsPos;
+    configInnerArmCANcoder();
   }
     
   /*************************************
@@ -273,8 +368,8 @@ public class InnerArmSubsystem extends SubsystemBase {
                                                     IAC.INNER_ARM_DATA_ROW)
                                       .withSize(2, IAC.INNER_ARM_DATA_LIST_HGT)
                                       .withProperties(Map.of("Label position", "LEFT"));
-    sbLayout.add("Ids: ", df1.format(IAC.INNER_ARM_FALCON_ID)+"  "+df1.format(IAC.INNER_ARM_CANCODER_ID));
-    sbLayout.add("Offset ", df3.format(IAC.INNER_ARM_CANCODER_MAGNET_OFFSET));
+    sbLayout.add("Ids: ", F.df1.format(IAC.INNER_ARM_FALCON_ID)+"  "+F.df1.format(IAC.INNER_ARM_CANCODER_ID));
+    m_magnetOffsetEntry   = sbLayout.add("Offset ", F.df3.format(m_magnetOffset)).getEntry();
     m_absAxlePosEntry     = sbLayout.add("Abs Pos", "0").getEntry();
     m_falconPosEntry      = sbLayout.add("Motor Pos", "0").getEntry();
     m_armSetpointEntry    = sbLayout.add("SetPt Pos", "0").getEntry();
@@ -283,19 +378,23 @@ public class InnerArmSubsystem extends SubsystemBase {
     m_falconAmpsEntry     = sbLayout.add("Amps", "0").getEntry();
   }
   
+  // This method writes InnerArm data to the dashboard.
   private void publishInnerArmData() {
     // SmartDashboard.putNumber("InnerCanRelPos ", m_innerArmCANcoder.getPosition().getValueAsDouble());
-    m_avgInnerRawAbsPos = ((m_avgInnerRawAbsPos * .95) + ((getAbsInnerArmPos()-IAC.INNER_ARM_CANCODER_MAGNET_OFFSET) * .05));
-    SmartDashboard.putNumber("InnerAvgRawAbsPos ", m_avgInnerRawAbsPos);
+    m_avgInnerRawAbsPos = (m_avgInnerRawAbsPos * .95) + (getRawInnerArmPos() * .05);
+    if ((m_count++ % 25) < .001) { // update the average every 1/2 sec to make it easier to copy
+      SmartDashboard.putNumber("InnerAvgRawAbsPos ", m_avgInnerRawAbsPos);
+    }
     SmartDashboard.putNumber("InnerCorrAbsPos ", getAbsInnerArmPos());
-    SmartDashboard.putNumber("InnerMotorPos ", m_innerArmMotor.getPosition().getValueAsDouble());
+    // SmartDashboard.putNumber("InnerMotorPos ", m_innerArmMotor.getPosition().getValueAsDouble());
 
-    m_absAxlePosEntry.setString(df3.format(getAbsInnerArmPos()));
-    m_falconPosEntry.setString(df3.format(m_innerArmMotor.getPosition().getValueAsDouble()));
-    m_armSetpointEntry.setString(df3.format(m_innerArmSetpoint));
-    m_armPIDOutEntry.setString(df3.format(m_innerArmMotor.getClosedLoopOutput().getValueAsDouble()));
-    m_axleVelocityEntry.setString(df3.format(m_innerArmCANcoder.getVelocity().getValueAsDouble()));
-    m_falconAmpsEntry.setString(df3.format(m_innerArmMotor.getSupplyCurrent().getValueAsDouble()));
+    m_magnetOffsetEntry.setString(F.df4.format(m_magnetOffset));
+    m_absAxlePosEntry.setString(F.df3.format(getAbsInnerArmPos()));
+    m_falconPosEntry.setString(F.df3.format(m_innerArmMotor.getPosition().getValueAsDouble()));
+    m_armSetpointEntry.setString(F.df3.format(m_innerArmSetpoint));
+    m_armPIDOutEntry.setString(F.df3.format(m_innerArmMotor.getClosedLoopOutput().getValueAsDouble()));
+    m_axleVelocityEntry.setString(F.df3.format(m_innerArmCANcoder.getVelocity().getValueAsDouble()));
+    m_falconAmpsEntry.setString(F.df3.format(m_innerArmMotor.getSupplyCurrent().getValueAsDouble()));
   }     
 
   /*************************

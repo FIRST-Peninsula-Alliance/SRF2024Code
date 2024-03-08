@@ -10,8 +10,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-import java.text.DecimalFormat;
-
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
@@ -86,11 +84,6 @@ public class SwerveModule {
     private GenericEntry wheelTempEntry;
     private GenericEntry steerAmpsEntry;
     private GenericEntry steerTempEntry;
-
-    // Formatters to control number of decimal places in the SwerveDrive tab
-    // module data lists
-    DecimalFormat df1 = new DecimalFormat("#.#");
-    DecimalFormat df2 = new DecimalFormat("#.##");
 
     public SwerveModule(int moduleNumber, SwerveModuleConstants moduleConstants) {
         m_modNum = moduleNumber;
@@ -219,7 +212,7 @@ public class SwerveModule {
         waitForCANcoder();
         double CANcoderOnReset = getCANcoderDeg();
         double absModuleDegOnReset = CANcoderOnReset - m_absAngleOffset2d.getDegrees();
-        //SmartDashboard.putString("Mod"+m_modNum+" CANcoder on Reset", df2.format(CANcoderOnReset));
+        //SmartDashboard.putString("Mod"+m_modNum+" CANcoder on Reset", F.df2.format(CANcoderOnReset));
         setNeoPosDeg(absModuleDegOnReset);
     }
 
@@ -397,10 +390,10 @@ public class SwerveModule {
         ShuffleboardLayout sBE_Layout = m_moduleConstants.SBE_LAYOUT;
         // See comment above about not needing to retain these Entry keys
         /* IdsEntry (D R E)= */ sBE_Layout.add("Ids", 
-                                               df1.format(m_moduleConstants.DRIVE_MOTOR_ID)+
-                                               "  "+df1.format(m_moduleConstants.STEER_MOTOR_ID)+
-                                               "  "+df1.format(m_moduleConstants.ENCODER_ID));
-        /* absOffsetEntry = */  sBE_Layout.add("Offset", df1.format(m_moduleConstants.ABS_ANG_OFFSET2D.getDegrees()));
+                                               F.df1.format(m_moduleConstants.DRIVE_MOTOR_ID)+
+                                               "  "+F.df1.format(m_moduleConstants.STEER_MOTOR_ID)+
+                                               "  "+F.df1.format(m_moduleConstants.ENCODER_ID));
+        /* absOffsetEntry = */  sBE_Layout.add("Offset", F.df1.format(m_moduleConstants.ABS_ANG_OFFSET2D.getDegrees()));
         absCANcoderDegEntry =   sBE_Layout.add("CCdeg", "0").getEntry();
         steerEncoderDegEntry =  sBE_Layout.add("MEdeg", "0").getEntry();
         steerSetpointDegEntry = sBE_Layout.add("SPdeg", "0").getEntry();
@@ -415,26 +408,26 @@ public class SwerveModule {
 
     public void publishModuleData() {
         // CANcoder direction
-        absCANcoderDegEntry.setString(df1.format(getCANcoderDeg()));
+        absCANcoderDegEntry.setString(F.df1.format(getCANcoderDeg()));
         // Current wheel direction
-        steerEncoderDegEntry.setString(df1.format(getNeoPosDeg()));
+        steerEncoderDegEntry.setString(F.df1.format(getNeoPosDeg()));
         // Wheel direction (steer) setpoint
-        steerSetpointDegEntry.setString(df1.format(Math.IEEEremainder(m_lastAngle, 360.0) + 180.0));
-        //steerSetpointDegEntry.setString(df1.format(m_lastAngle));
+        steerSetpointDegEntry.setString(F.df1.format(Math.IEEEremainder(m_lastAngle, 360.0) + 180.0));
+        //steerSetpointDegEntry.setString(F.df1.format(m_lastAngle));
         // SteerMotor PID applied ouutput    
-        steerPIDOutputEntry.setString(df2.format(m_steerMotor.getAppliedOutput()));
+        steerPIDOutputEntry.setString(F.df2.format(m_steerMotor.getAppliedOutput()));
         // Wheel Speed
-        wheelCurrSpeedEntry.setString(df1.format(m_driveMotor.getVelocity().getValueAsDouble() * SDC.FALCON_RPS_TO_MPS_FACTOR));
+        wheelCurrSpeedEntry.setString(F.df1.format(m_driveMotor.getVelocity().getValueAsDouble() * SDC.FALCON_RPS_TO_MPS_FACTOR));
         // Wheel position, meters
-        wheelCurrPosEntry.setString(df2.format(getPositionM()));
+        wheelCurrPosEntry.setString(F.df2.format(getPositionM()));
         // Wheel Amps
-        wheelAmpsEntry.setString(df1.format(m_driveMotor.getSupplyCurrent().getValueAsDouble()));
+        wheelAmpsEntry.setString(F.df1.format(m_driveMotor.getSupplyCurrent().getValueAsDouble()));
         // Wheel Temp
-        wheelTempEntry.setString(df1.format(m_driveMotor.getDeviceTemp().getValueAsDouble()));
+        wheelTempEntry.setString(F.df1.format(m_driveMotor.getDeviceTemp().getValueAsDouble()));
         // Steering Amps
-        steerAmpsEntry.setString(df1.format(m_steerMotor.getOutputCurrent()));
+        steerAmpsEntry.setString(F.df1.format(m_steerMotor.getOutputCurrent()));
         // Steering Temp
-        steerTempEntry.setString(df1.format(m_steerMotor.getMotorTemperature()));
+        steerTempEntry.setString(F.df1.format(m_steerMotor.getMotorTemperature()));
     }
 
     public void stop() {

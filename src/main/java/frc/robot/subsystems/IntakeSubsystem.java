@@ -9,6 +9,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 //import com.ctre.phoenix6.signals.InvertedValue;
 //import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
+
 import com.ctre.phoenix6.StatusCode;
 //import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -22,6 +25,8 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 //import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.util.FileRecorder;
+import frc.lib.util.FileRecorder.NoteRequest;
 import frc.robot.Constants;
 import frc.robot.NotableConstants.IC;
 
@@ -31,6 +36,10 @@ public class IntakeSubsystem extends SubsystemBase {
     private static double m_intakeSpeedFactor = IC.HOLD_NOTE;
     private double m_intakeBaseSpeed = IC.INTAKE_BASE_SPEED;
     private static long m_startTime;
+
+    private Supplier<String> m_currentStateName;
+    private IntSupplier m_currentSeqNo;
+    private FileRecorder m_fileRecorder;
     //private DigitalInput m_intakeCompleteSensor = new DigitalInput(IC.INTAKE_SENSOR_PORT_ID);
 
     // Declare Phoenix6 control request objects for the Intake Motor:
@@ -42,7 +51,12 @@ public class IntakeSubsystem extends SubsystemBase {
     private final DutyCycleOut m_intakeCtrl = new DutyCycleOut(m_intakeBaseSpeed * m_intakeSpeedFactor).withUpdateFreqHz(0);
   
   /** Creates a new IntakeSubsystem. */
-  public IntakeSubsystem() { 
+  public IntakeSubsystem(Supplier<String> currentStateName, 
+                         IntSupplier currentSeqNo,
+                         FileRecorder fileRecorder) {
+    m_currentStateName = currentStateName;
+    m_currentSeqNo = currentSeqNo;
+    m_fileRecorder = fileRecorder;
     m_intakeMotor = new TalonFX(IC.INTAKE_FALCON_MOTOR_ID, Constants.CANIVORE_BUS_NAME);
     configIntakeMotor();
   }
@@ -51,11 +65,19 @@ public class IntakeSubsystem extends SubsystemBase {
     m_intakeIsRunning = true;
     m_intakeSpeedFactor = IC.ACQUIRE_NOTE;
     m_startTime = System.currentTimeMillis();
+    m_fileRecorder.recordIntakeEvent(NoteRequest.INTAKE_ACQUIRE,
+                                     m_startTime,
+                                     m_currentStateName.get(),
+                                     m_currentSeqNo.getAsInt());
   }
 
   public void holdNote() {
     m_intakeIsRunning = true;
     m_intakeSpeedFactor = IC.HOLD_NOTE;
+    m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_HOLD,
+                                      System.currentTimeMillis(),
+                                      m_currentStateName.get(),
+                                      m_currentSeqNo.getAsInt());
   }
 
   public void ejectNote() {
@@ -63,11 +85,19 @@ public class IntakeSubsystem extends SubsystemBase {
     m_intakeSpeedFactor = IC.EJECT_NOTE;
     m_intakeMotor.setControl(m_intakeCtrl.withOutput(m_intakeBaseSpeed * m_intakeSpeedFactor));
     m_startTime = System.currentTimeMillis();
+    m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_EJECT,
+                                      m_startTime,
+                                      m_currentStateName.get(),
+                                      m_currentSeqNo.getAsInt());
   }
 
   public void stopIntake() {
     m_intakeIsRunning = false;
     m_intakeSpeedFactor = 0;
+    m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_STOP,
+                                      System.currentTimeMillis(),
+                                      m_currentStateName.get(),
+                                      m_currentSeqNo.getAsInt());
   }
 
   public void cancelIntake() {

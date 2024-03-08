@@ -12,7 +12,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Pose2d;
-import java.text.DecimalFormat;
 import java.util.Map;
 
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
@@ -57,10 +56,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
     private double m_steerKP;
     private int m_count = 0;
-
-    DecimalFormat df1 = new DecimalFormat("#.#");
-    DecimalFormat df2 = new DecimalFormat("#.##");
-    DecimalFormat df4 = new DecimalFormat("#.####");
 
     public SwerveSubsystem() {
         m_gyro = new Pigeon2(GC.PIGEON_2_CANID, Constants.ROBO_RIO_BUS_NAME);
@@ -257,9 +252,9 @@ public class SwerveSubsystem extends SubsystemBase {
                 m_gyroYawEntry =        sl.add("Gyro Yaw", "0").getEntry();
                 m_gyroRawYawEntry =     sl.add("Gyro Raw Yaw", "0").getEntry();
                 m_isFieldOrientedEntry= sl.add("Field Oriented ", "Yes").getEntry();
-                m_steerKPEntry =    sl.add("Steer Motor kP ", df4.format(SDC.STEER_KP)).getEntry();
-                m_odometryPoseXEntry =  sl.add("Pose X", df2.format(m_swerveOdometry.getPoseMeters().getX())).getEntry();
-                m_odometryPoseYEntry =  sl.add("Pose Y", df2.format(m_swerveOdometry.getPoseMeters().getY())).getEntry();
+                m_steerKPEntry =    sl.add("Steer Motor kP ", F.df4.format(SDC.STEER_KP)).getEntry();
+                m_odometryPoseXEntry =  sl.add("Pose X", F.df2.format(m_swerveOdometry.getPoseMeters().getX())).getEntry();
+                m_odometryPoseYEntry =  sl.add("Pose Y", F.df2.format(m_swerveOdometry.getPoseMeters().getY())).getEntry();
                 // m_gyroPitchEntry = // opt
                 // m_gyroRollEntry = // opt
                 // m_cenOfRotationEntry = // opt
@@ -279,10 +274,10 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void publishSwerveDriveData() {
-            m_gyroYawEntry.setString(df1.format(getYaw2d().getDegrees()));
-            m_gyroRawYawEntry.setString(df1.format(m_gyro.getYaw().getValueAsDouble()));
-            m_odometryPoseXEntry.setString(df2.format(m_swerveOdometry.getPoseMeters().getX()));
-            m_odometryPoseYEntry.setString(df2.format(m_swerveOdometry.getPoseMeters().getY()));           
+            m_gyroYawEntry.setString(F.df1.format(getYaw2d().getDegrees()));
+            m_gyroRawYawEntry.setString(F.df1.format(m_gyro.getYaw().getValueAsDouble()));
+            m_odometryPoseXEntry.setString(F.df2.format(m_swerveOdometry.getPoseMeters().getX()));
+            m_odometryPoseYEntry.setString(F.df2.format(m_swerveOdometry.getPoseMeters().getY()));           
             m_isFieldOrientedEntry.setString(m_isFieldOriented ? "Yes" : "No");
         // m_gyroPitchEntry
         // m_gyroRollEntry
@@ -305,7 +300,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 m_steerKP = Math.abs(steerKP);
                 m_steerKP = (m_steerKP < 0.0001) ? 0.0001 : m_steerKP;
                 m_steerKP = (m_steerKP > 4.0) ? 4.0 : m_steerKP;
-                m_steerKPEntry.setString(df4.format(m_steerKP));
+                m_steerKPEntry.setString(F.df4.format(m_steerKP));
                 for(SwerveModule mod : m_swerveMods) {
                     mod.setSteerKP(m_steerKP);
                 }

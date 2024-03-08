@@ -9,7 +9,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
-import java.text.DecimalFormat;
 import java.util.Map;
 
 import com.ctre.phoenix6.StatusCode;
@@ -33,7 +32,10 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.util.FileRecorder;
+import frc.lib.util.FileRecorder.NoteEvent;
 import frc.robot.Constants;
+import frc.robot.Constants.F;
 import frc.robot.NotableConstants.MAC;
 import frc.robot.commands.RumbleCmd;
 
@@ -43,8 +45,10 @@ public class MasterArmSubsystem extends SubsystemBase {
   // observing the effects of each change before moving on.
 
   private static boolean DEBUG_ON = false;
+  private static boolean LOGGING_ON = true;
 
-  public long m_startTime;
+  public long m_startTime;      // use to measure timeouts on Arm movement
+  public long m_elapsedTime;
 
   // Repetoire defines Higher level Note Handler States
   // involving multiple SubSystems, which for convenience (related to
@@ -89,10 +93,20 @@ public class MasterArmSubsystem extends SubsystemBase {
    * directly from this subystem, and requiring all public
    * access to them (e.g. bindings in RobotContainer) to 
    * go though MasterArmSubsystem intermediaries.
+   * For debug purposes, a FileRecorder is created to log
+   * all NoteHandler requests, movements, timeouts,
+   * state changes and errors to a thumb drive.
    ********************************************************/
-  public InnerArmSubsystem m_innerArmSubsystem = new InnerArmSubsystem();
-  public IntakeSubsystem   m_intakeSubsystem  = new IntakeSubsystem();
-  public ShooterSubsystem  m_shooterSubsystem = new ShooterSubsystem();
+  public FileRecorder m_fileRecorder = LOGGING_ON ? new FileRecorder("NoteData") : null;
+  public InnerArmSubsystem m_innerArmSubsystem = new InnerArmSubsystem(()-> getCurrentStateName(),
+                                                                       ()-> getCurrentSeqNo(),
+                                                                       m_fileRecorder);
+  public IntakeSubsystem   m_intakeSubsystem  = new IntakeSubsystem(()-> getCurrentStateName(),
+                                                                    ()-> getCurrentSeqNo(),
+                                                                    m_fileRecorder);
+  public ShooterSubsystem  m_shooterSubsystem = new ShooterSubsystem(()-> getCurrentStateName(),
+                                                                     ()-> getCurrentSeqNo(),
+                                                                     m_fileRecorder);
 
   // Local motors and sensors 
   private TalonFX m_masterArmMotor = new TalonFX(MAC.MASTER_ARM_FALCON_ID, Constants.CANIVORE_BUS_NAME);
@@ -121,10 +135,7 @@ public class MasterArmSubsystem extends SubsystemBase {
   private GenericEntry m_pendingSeqNoEntry;
   private GenericEntry m_isDistantShotEntry;
 
-  // Formatters to control number of decimal places in the published data lists
-  DecimalFormat df1 = new DecimalFormat("#.#");
-  DecimalFormat df2 = new DecimalFormat("#.##");
-  DecimalFormat df3 = new DecimalFormat("#.###");
+  private double m_positionError;
 
   /******************************************************
    * Constructor for a new MasterArmSubsystem. 
@@ -142,6 +153,18 @@ public class MasterArmSubsystem extends SubsystemBase {
     setupMasterArmPublishing();
     m_avgMasterRawAbsPos = getAbsMasterArmPos() - MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET;
     gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);
+  }
+
+  /***********************************************
+   * State status access methods
+   ***********************************************/
+
+  public String getCurrentStateName() {
+    return m_nowPlaying.toString();
+  }
+
+  public int getCurrentSeqNo() {
+    return m_currentSeqNo;
   }
 
   /**************************************************************
@@ -358,19 +381,6 @@ public class MasterArmSubsystem extends SubsystemBase {
     }
   }
 
-  // setter for new Note state
-  public void changeNoteStateTo(Repetoire newState) {
-    if (DEBUG_ON) {
-        System.out.println("Changing from NST "+m_nowPlaying.toString()
-                            +" to NST "+newState.toString());
-        m_pendingNote = newState;
-        m_nowPlaying = Repetoire.DEBUG_HOLD;
-    } else {
-        m_nowPlaying = newState;
-    }
-    resetSeqNo();   
-  }
-
   /*********************************************
    * Status utilities to assist with Autonomous 
    *********************************************/
@@ -471,15 +481,6 @@ public class MasterArmSubsystem extends SubsystemBase {
   }
   */
 
-  public void stepPastDebugHold() {
-    if (m_nowPlaying == Repetoire.DEBUG_HOLD) {
-      m_nowPlaying = m_pendingNote;
-    }
-    if (m_currentSeqNo == 99) {
-      m_currentSeqNo = m_pendingSeqNo;
-    }
-  }
-
   /*************************************************************
    * @param setpoint
    * gotoPosition() method directs MasterArm to a desired 
@@ -575,38 +576,54 @@ public class MasterArmSubsystem extends SubsystemBase {
   }
 
   /********************************************************************************
-   * Methods which return MasterArm position, and various boolean filters for same.
+   * Methods which return or check the current MasterArm position.
    ********************************************************************************/
   // getAbsMasterArmPos returns the MasterArmEncoder sensor position
   // which is in absolute rotations, with origin of 0 when horizontal,
-  // already corrected for magnet offset (the offset must be measured,
+  // corrected for magnet offset (the magnet offset must be measured,
   // then stored in NotableConstants.java).
-  //
-  // That is followed by individual position test methods for each 
-  // MasterArm defined subState absolute position.
-  // 
-  public double getAbsMasterArmPos() {
+   public double getAbsMasterArmPos() {
     return(m_masterArmEncoder.getAbsolutePosition().getValueAsDouble());
   }
 
-  private boolean isMasterArmAt(double position) {
-    if (Math.abs(getAbsMasterArmPos() - position) < MAC.ALLOWED_MASTER_ARM_POS_ERROR) {
-      // MasterArm has reached setpoint
-      return true;
-    } else if ((System.currentTimeMillis() - m_startTime) <= MAC.ALLOWED_MILLIS_PER_MOVE) {
-      // Timeout has not yet occured
-      return false;
-    } else {
-      // PID is agressive, and seemingly very reliable, but not perfect at
-      // getting to final setpoint within desired tolerances. So even if not yet at 
-      // final setpoint according to the encoder, if timeout occurs, just
-      // assume we are close enough, so as not to "hang" the state machine.
-      // There is some danger in this approach, given potential mechanical
-      // collisions, if a sensor fails during a match.
-      System.out.println("MasterArm move to setpoint "+position+" resulted in timeout");
+  // isMasterArmAt can be called for any MasterArm position that has previously 
+  // been sent to the motor controller as a setpoint. It returns true if the 
+  // current Arm position is within an allowable delta of the setpoint, or if 
+  // the arrival timeout has expired (every requested move records a startTime 
+  // from which a timeout can be calculated). Otherwise it returns false.
+  private boolean isMasterArmAt(double position, long timeoutDuration) {
+    m_positionError = position - getAbsMasterArmPos();
+    m_elapsedTime = System.currentTimeMillis() - m_startTime;
+
+    if (Math.abs(m_positionError) < MAC.ALLOWED_MASTER_ARM_POS_ERROR) {
+      m_fileRecorder.recordMoveEvent("MA",
+                                     NoteEvent.SETPOINT_REACHED,
+                                     position,
+                                     m_positionError,
+                                     System.currentTimeMillis(),
+                                     m_elapsedTime,
+                                     m_nowPlaying.toString(),
+                                     m_currentSeqNo);
       return true;
     }
-  }    
+    if (m_elapsedTime <= timeoutDuration) {
+      // general timeout has not yet expired.
+        return false;
+    } else {
+      // timeout has occured. Log event and force assumption that MasterArm is at 
+      // the requested setpoint. This avoids "hanging" the state machine due to
+      // a slow PID (hopefully the position is close enough).
+      m_fileRecorder.recordMoveEvent( "MA",
+                                      NoteEvent.TIMEOUT_OCCURED,
+                                      position,
+                                      m_positionError,
+                                      System.currentTimeMillis(),
+                                      m_elapsedTime,
+                                      m_nowPlaying.toString(),
+                                      m_currentSeqNo);
+      return true;
+    }
+  }
 
   /*******************************************************************
    * Setup and Config routines
@@ -673,6 +690,12 @@ public class MasterArmSubsystem extends SubsystemBase {
     }
   }
 
+  // Called on ALT+Start button press. BE SURE calibration stick is in place
+  // before pressing!
+  public void resetInnerArmMagnetOffset() {
+    m_innerArmSubsystem.resetMagnetOffset();
+  }
+
   /********************************************************************
    * Publishing setup and operation
    ********************************************************************/
@@ -701,8 +724,8 @@ public class MasterArmSubsystem extends SubsystemBase {
                                                     MAC.MASTER_ARM_DATA_ROW)
                                       .withSize(2, MAC.MASTER_ARM_DATA_LIST_HGT)
                                       .withProperties(Map.of("Label position", "LEFT"));
-    sbLayout.add("Ids ", df1.format(MAC.MASTER_ARM_FALCON_ID)+"  "+df1.format(MAC.MASTER_ARM_ENCODER_ID));
-    sbLayout.add("Offset", df1.format(MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET));
+    sbLayout.add("Ids ", F.df1.format(MAC.MASTER_ARM_FALCON_ID)+"  "+F.df1.format(MAC.MASTER_ARM_ENCODER_ID));
+    sbLayout.add("Offset", F.df1.format(MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET));
     m_absAxlePosEntry     = sbLayout.add("Abs Pos", "0").getEntry();
     m_falconRotorPosEntry = sbLayout.add("Motor Pos", "0").getEntry();
     m_armSetpointPosEntry = sbLayout.add("SetPt Pos", "0").getEntry();
@@ -728,13 +751,13 @@ public class MasterArmSubsystem extends SubsystemBase {
   }
 
   private void publishMasterArmData() {
-    m_absAxlePosEntry.setString(df3.format(getAbsMasterArmPos()));
-    m_falconRotorPosEntry.setString(df3.format(m_masterArmMotor.getPosition().getValueAsDouble()));
-    m_armSetpointPosEntry.setString(df3.format(m_currentMasterArmSetpoint));
-    m_armNotePickupPosEntry.setString(df3.format(m_maNotePickupPosSetpoint));
-    m_armPIDOutEntry.setString(df3.format(m_masterArmMotor.getClosedLoopOutput().getValueAsDouble()));
-    m_AxleVelocityEntry.setString(df3.format(m_masterArmEncoder.getVelocity().getValueAsDouble()));
-    m_falconAmpsEntry.setString(df3.format(m_masterArmMotor.getSupplyCurrent().getValueAsDouble()));
+    m_absAxlePosEntry.setString(F.df3.format(getAbsMasterArmPos()));
+    m_falconRotorPosEntry.setString(F.df3.format(m_masterArmMotor.getPosition().getValueAsDouble()));
+    m_armSetpointPosEntry.setString(F.df3.format(m_currentMasterArmSetpoint));
+    m_armNotePickupPosEntry.setString(F.df3.format(m_maNotePickupPosSetpoint));
+    m_armPIDOutEntry.setString(F.df3.format(m_masterArmMotor.getClosedLoopOutput().getValueAsDouble()));
+    m_AxleVelocityEntry.setString(F.df3.format(m_masterArmEncoder.getVelocity().getValueAsDouble()));
+    m_falconAmpsEntry.setString(F.df3.format(m_masterArmMotor.getSupplyCurrent().getValueAsDouble()));
     m_playingNowEntry.setString(m_nowPlaying.toString());
     m_pendingNoteEntry.setString(m_pendingNote.toString());
     m_seqNoEntry.setInteger(m_currentSeqNo);
@@ -844,13 +867,45 @@ public class MasterArmSubsystem extends SubsystemBase {
     }
   }
 
-  // Method supports single stepping though SeqNos if DEBUG_ON is true
+  /****************************************************************
+   * Methods for changing state and SeqNo
+   * Both change methods support single stepping though States
+   * and/or SeqNos if DEBUG_ON is true
+   * Both also log to File all changes
+   ***************************************************************/
+  // setter for new Note state
+  public void changeNoteStateTo(Repetoire newState) {
+    if ((! DEBUG_ON) || (m_nowPlaying == Repetoire.DEBUG_HOLD)) {
+      m_fileRecorder.recordStateChange( System.currentTimeMillis(),
+                                        m_nowPlaying.toString(),
+                                        newState.toString(),
+                                        m_currentSeqNo);
+      m_nowPlaying = newState;
+    } else {
+      m_fileRecorder.recordStateChange( System.currentTimeMillis(),
+                                        m_nowPlaying.toString(),
+                                        Repetoire.DEBUG_HOLD.toString(),
+                                        m_currentSeqNo);
+      m_pendingNote = newState;
+      m_nowPlaying = Repetoire.DEBUG_HOLD;
+    }
+    resetSeqNo();   
+  }
+
   private void changeSeqNoTo(int newSeqNo) {
-    if (DEBUG_ON) {
+    if ((! DEBUG_ON) || (m_currentSeqNo == 99)) {
+      m_fileRecorder.recordSeqNoChange( System.currentTimeMillis(),
+                                        m_nowPlaying.toString(),
+                                        m_currentSeqNo,
+                                        newSeqNo );
+      m_currentSeqNo = newSeqNo;
+    } else {
+      m_fileRecorder.recordSeqNoChange( System.currentTimeMillis(),
+                                        m_nowPlaying.toString(),
+                                        m_currentSeqNo,
+                                        99);
       m_pendingSeqNo = newSeqNo;
       m_currentSeqNo = 99;
-    } else {
-      m_currentSeqNo = newSeqNo;
     }
   }
 
@@ -859,6 +914,15 @@ public class MasterArmSubsystem extends SubsystemBase {
     m_pendingSeqNo = m_currentSeqNo;
   }
 
+  public void stepPastDebugHold() {
+    if (m_nowPlaying == Repetoire.DEBUG_HOLD) {
+      changeNoteStateTo(m_pendingNote);
+    }
+    if (m_currentSeqNo == 99) {
+      changeSeqNoTo(m_pendingSeqNo);
+    }
+  }
+  
   /*****************************************
    * PROCESS ACQUIRE NOTE PREP
    *****************************************/
@@ -872,13 +936,16 @@ public class MasterArmSubsystem extends SubsystemBase {
 
       case 2:
         if (m_innerArmSubsystem.innerArmIsVertical()) {
+          System.out.println("MA Received a True response");  
           gotoPosition(MAC.LOW_SAFE_TO_ROTATE_OUT_POS);   // Set masterArm moving, then wait for it
           changeSeqNoTo(3);
+        } else {
+          System.out.println("MA Recieved a False response");
         }
         break;
 
       case 3:
-        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS)) {
+        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
           m_innerArmSubsystem.gotoBumperContactPos();     // Set innerArm moving, then wait for it
           changeSeqNoTo(4);
         }
@@ -892,7 +959,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 5:
-        if (isMasterArmAt(m_maNotePickupPosSetpoint)) {
+        if (isMasterArmAt(m_maNotePickupPosSetpoint, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
           m_innerArmSubsystem.gotoNotePickupPos();        // set innerArm moving to pickup Pos, then wait for it
           changeSeqNoTo(6);
         }
@@ -934,7 +1001,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 3:
-        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS)) {
+        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
           m_innerArmSubsystem.gotoVerticalPos();                // set innerArm moving, then wait for it
           changeSeqNoTo(4);
         }
@@ -948,7 +1015,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 5:
-        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_IN_POS)) {
+        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_IN_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
           //m_innerArmSubsystem.gotoSpeakerShotPos(false);  // set innerArm moving, then wait for it
           // We could eliminate this step now that default inner arm position is VERTICAL,
           // but leave it in case we revert to indexed speaker shot position
@@ -967,7 +1034,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 7:
-        if (isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS)) {
+        if (isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
           changeNoteStateTo(Repetoire.WAIT_FOR_SPECIFIED_GOAL);
         }
         break;
@@ -990,14 +1057,11 @@ public class MasterArmSubsystem extends SubsystemBase {
         // in this instance, we can do a lot in parallel, then wait for all to complete
         m_shooterSubsystem.prepareToShoot(m_isDistantSpeakerShot);
         m_innerArmSubsystem.gotoSpeakerShotPos(m_isDistantSpeakerShot);
-        gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);
-        /*
         if (m_isDistantSpeakerShot) {
           gotoPosition(MAC.DISTANT_SPEAKER_SHOT_POS);
         } else {
           gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);
         }
-        */
         changeSeqNoTo(2);
         m_startTime = System.currentTimeMillis();
         break;
@@ -1009,15 +1073,16 @@ public class MasterArmSubsystem extends SubsystemBase {
         if (m_isDistantSpeakerShot) {
           m_armsAreReadyToShoot = m_innerArmSubsystem.innerArmIsAtDistantSpeakerPos()
                                   &&
-                                  isMasterArmAt(MAC.DISTANT_SPEAKER_SHOT_POS);
+                                  isMasterArmAt(MAC.DISTANT_SPEAKER_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE);
         } else {
           m_armsAreReadyToShoot = m_innerArmSubsystem.innerArmIsAtIndexedSpeakerPos()
                                   &&
-                                  isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS);
+                                  isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE);
         }
+        m_elapsedTime = System.currentTimeMillis() - m_startTime;
         if ((m_shooterSubsystem.isReadyToShoot() && m_armsAreReadyToShoot)
             ||
-            ((System.currentTimeMillis() - m_startTime) > 2000)) {
+            (m_elapsedTime > 2000)) {
           if (m_noWaitToScore) {
             changeNoteStateTo(Repetoire.SCORE_SPEAKER); 
           } else {
@@ -1083,7 +1148,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 3:
-        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS)) {
+        if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
           m_innerArmSubsystem.gotoHorizontalBackPos();            // set innerArm moving, then wait for it
           changeSeqNoTo(4);
         }
@@ -1097,7 +1162,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 5:
-        if (isMasterArmAt(MAC.HIGH_SAFE_TO_ROTATE_DOWN_AND_OUT_POS)) {
+        if (isMasterArmAt(MAC.HIGH_SAFE_TO_ROTATE_DOWN_AND_OUT_POS, MAC.ALLOWED_MILLIS_MA_LARGE_MOVE)) {
           m_innerArmSubsystem.gotoAmpShotPos();                   // set innerArm moving, then wait for it
           changeSeqNoTo(6);
         }
@@ -1111,7 +1176,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case 7:
-        if (isMasterArmAt(MAC.AMP_SHOT_POS)) {
+        if (isMasterArmAt(MAC.AMP_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
           changeNoteStateTo(Repetoire.WAIT_TO_SCORE_AMP);
         }
         break;
@@ -1174,7 +1239,7 @@ public class MasterArmSubsystem extends SubsystemBase {
       break;
 
     case 3:
-      if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS)) {
+      if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_OUT_POS, MAC.ALLOWED_MILLIS_MA_LARGE_MOVE)) {
         m_innerArmSubsystem.gotoVerticalPos();
         changeSeqNoTo(4);
       }
@@ -1188,7 +1253,7 @@ public class MasterArmSubsystem extends SubsystemBase {
       break;
 
     case 5:
-      if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_IN_POS)) {
+      if (isMasterArmAt(MAC.LOW_SAFE_TO_ROTATE_IN_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
         //m_innerArmSubsystem.gotoSpeakerShotPos(false);  // set innerArm moving, then wait for it
         m_innerArmSubsystem.gotoVerticalPos();            // Could delete this step now that innerarm idle
                                                           // position is Vertical, but keep in case
@@ -1207,7 +1272,7 @@ public class MasterArmSubsystem extends SubsystemBase {
       break;
 
     case 7:
-      if (isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS)) {
+      if (isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
         changeNoteStateTo(Repetoire.NOTE_HANDLER_IDLE);
       }
       break;
