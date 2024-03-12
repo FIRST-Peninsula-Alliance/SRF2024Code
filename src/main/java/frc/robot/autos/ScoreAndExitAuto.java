@@ -56,11 +56,11 @@ public class ScoreAndExitAuto extends SequentialCommandGroup {
 
             new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
             List.of(new Translation2d(0.125, 0.0),
-                    new Translation2d(0.25, 0.0),
-                    new Translation2d(0.5, 0.0),
-                    new Translation2d(0.75, 0.0),
-                    new Translation2d(0.875, 0.0)),
-            new Pose2d(1.00, 0.0, new Rotation2d(0.0)),
+                    new Translation2d(0.25, 0.25),
+                    new Translation2d(0.5, 0.5),
+                    new Translation2d(0.75, 0.5),
+                    new Translation2d(0.875, 0.5)),
+            new Pose2d(1.00, 0.5, new Rotation2d(90.0)),
             configExit);
 
       ProfiledPIDController thetaController =

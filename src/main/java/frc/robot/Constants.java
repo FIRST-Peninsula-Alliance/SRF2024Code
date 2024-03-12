@@ -398,14 +398,14 @@ public final class Constants {
      ***********************************************************/
     public static final class AutoC {       // AutoC = short for AutoConstants
         //TODO: The below constants are used in the example auto, and must be tuned to specific robot
-        public static final double AUTO_MAX_SPEED_M_PER_SEC = 2.5;        // was 4.5
-        public static final double AUTO_MAX_ACCEL_M_PER_SEC2 = 1.5;      // was 3
-        public static final double AUTO_MAX_ANG_VEL_RAD_PER_SEC = 2.5*Math.PI;      // was 4
-        public static final double AUTO_MAX_ANG_ACCEL_RAD_PER_SEC2 = 1*Math.PI;    // was 2
+        public static final double AUTO_MAX_SPEED_M_PER_SEC = 1.5;        // was 4.5
+        public static final double AUTO_MAX_ACCEL_M_PER_SEC2 = 0.5;      // was 3
+        public static final double AUTO_MAX_ANG_VEL_RAD_PER_SEC = 1.5*Math.PI;      // was 4
+        public static final double AUTO_MAX_ANG_ACCEL_RAD_PER_SEC2 = .5*Math.PI;    // was 2
 
-        public static final double KP_X_CONTROLLER = 1;        // TODO: was 2
-        public static final double KP_Y_CONTROLLER = 1;          // was 1
-        public static final double KP_THETA_CONTROLLER = 1.6;        //was 1.6
+        public static final double KP_X_CONTROLLER = .5;     // was 1;        // TODO: was 2
+        public static final double KP_Y_CONTROLLER = .5;        // 1;          // was 1
+        public static final double KP_THETA_CONTROLLER = .76;       //1.6;        //was 1.6
     
         /* Constraint for the motion profiled robot angle controller */
         public static final TrapezoidProfile.Constraints K_THETA_CONTROLLER_CONSTRAINTS =

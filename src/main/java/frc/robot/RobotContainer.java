@@ -23,10 +23,9 @@ import frc.robot.subsystems.ClimbSubsystem;
  */
 public class RobotContainer {
     /* Subsystem local object handles */
-    public SwerveSubsystem          m_swerveSubsystem;
-    public MasterArmSubsystem       m_masterArmSubsystem;
-    public ClimbSubsystem           m_climbSubsystem;
-
+    private SwerveSubsystem          m_swerveSubsystem;
+    private MasterArmSubsystem       m_masterArmSubsystem;
+    private ClimbSubsystem           m_climbSubsystem;
 
     private final SwerveParkCmd     m_parkCmd;
 
@@ -155,15 +154,11 @@ public class RobotContainer {
         m_xbox.b().onTrue(new InstantCommand(()->m_masterArmSubsystem.acquireNote()));
         m_xbox.a().onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForAmpScore()));
         m_xbox.y().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForIndexedSpeakerScore()));
-        // ALT.and(m_xbox.y()).onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForDistantSpeakerScore()));
+        ALT.and(m_xbox.y()).onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForDistantSpeakerScore()));
         m_xbox.rightTrigger(0.5).and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.scoreNote()));
         ALT.and(m_xbox.rightTrigger(0.5)).onTrue(new InstantCommand(()->m_masterArmSubsystem.discardNote()));
         m_xbox.start().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.stepPastDebugHold()));
-        ALT.and(m_xbox.start()).onTrue(new InstantCommand(()->m_masterArmSubsystem.resetInnerArmMagnetOffset()));
         m_xbox.leftTrigger().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.simulateNoteAcquired()));
-    
-        // ALT.and(m_xbox.leftStick()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.setTestAim(false)));
-        // ALT.and(m_xbox.rightStick()).onTrue(new InstantCommand(()->m_masterArmSubsystem.toggleTestShooter()));
     
         // Utilities for fine tuning various arm positions, can be used in extremis
         // during a match if pickup angles are not working.
@@ -185,7 +180,8 @@ public class RobotContainer {
         m_xbox.povLeft().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.gotoIASetpoint1()));
         m_xbox.povRight().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.gotoIASetpoint2()));
     */    
-        // climb activities
+        // climb activities, normally uses pov
+        ALT.and(m_xbox.back()).onTrue(new InstantCommand(()->m_climbSubsystem.overrideEndOfMatchSafety()));
 
         ALT.and(m_xbox.povUp()).onTrue(new InstantCommand(()-> m_climbSubsystem.raiseElevator()));
         ALT.and(m_xbox.povUp()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopElevator()));
@@ -193,7 +189,14 @@ public class RobotContainer {
         ALT.and(m_xbox.povDown()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopElevator()));
         ALT.and(m_xbox.leftTrigger()).onTrue(new InstantCommand(()-> m_climbSubsystem.runClimbWinch()));
         ALT.and(m_xbox.leftTrigger()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopClimbWinch()));
-        ALT.and(m_xbox.back()).onTrue(new InstantCommand(()->m_climbSubsystem.overrideEndOfMatchSafety()));
+
+        // For testing, use pov pad for tuning shooter aim and velocity (via voltage out).
+        /*
+        ALT.and(m_xbox.povUp()).onTrue(new InstantCommand(()-> m_shooterSubsystem.changeShooterAimTest(1.0)));
+        ALT.and(m_xbox.povDown()).onTrue(new InstantCommand(()-> m_shooterSubsystem.changeShooterAimTest(-1.0)));
+        ALT.and(m_xbox.povLeft()).onTrue(new InstantCommand(()-> m_shooterSubsystem.changeShooterVoltageTest(1.0)));
+        ALT.and(m_xbox.povRight()).onTrue(new InstantCommand(()-> m_shooterSubsystem.changeShooterVoltageTest(-1.0)));
+        */
     }
 
     public Command getAutonomousCommand() {

@@ -158,7 +158,7 @@ public class ClimbSubsystem extends SubsystemBase {
                                             .withEnableFOC(true)
                                             .withUpdateFreqHz(50));    
     }
-    SmartDashboard.putNumber("Elevator Pos", m_elevatorMotor.getEncoder().getPosition());
+    //SmartDashboard.putNumber("Elevator Pos", m_elevatorMotor.getEncoder().getPosition());
     SmartDashboard.putNumber("Elevator Amps", m_elevatorMotor.getOutputCurrent());
     SmartDashboard.putNumber("Climb Winch Amps", m_climbMotor.getSupplyCurrent().getValueAsDouble());
   }

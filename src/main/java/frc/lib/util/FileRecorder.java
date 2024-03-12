@@ -49,9 +49,11 @@ public class FileRecorder {
     private static FileWriter m_fileWriter;
     private BufferedWriter m_bufferedWriter;
     private String m_pathName;
+    private static boolean NOTE_LOGGING_ACTIVE;
 
-    public FileRecorder(String filename) {
+    public FileRecorder(String filename, boolean isFileRecorderActive) {
         m_pathName = "/U/"+filename+".txt";
+        NOTE_LOGGING_ACTIVE = isFileRecorderActive;
         try {
             m_fileWriter = new FileWriter(m_pathName, false);   // Overwrite existing file
             m_bufferedWriter = new BufferedWriter(m_fileWriter);
@@ -62,7 +64,7 @@ public class FileRecorder {
     }
      
     public static boolean isFileRecorderAvail() {
-        return m_fileWriter != null;
+        return NOTE_LOGGING_ACTIVE;
     }
 
     public void recordMoveEvent(String caller,

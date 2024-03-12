@@ -43,9 +43,7 @@ public class InnerArmSubsystem extends SubsystemBase {
   private CANcoder m_innerArmCANcoder = new CANcoder(IAC.INNER_ARM_CANCODER_ID, Constants.CANIVORE_BUS_NAME);
 
   private double m_innerArmSetpoint;
-  private double m_innerArmNotePickupPosSetpoint;
   private double m_avgInnerRawAbsPos;
-  private double m_avgRawHomePos;
   private double m_magnetOffset = IAC.INNER_ARM_CANCODER_MAGNET_OFFSET;
   private int m_count = 0;
   private boolean m_isDistantSpeakerShot = false;
@@ -54,7 +52,6 @@ public class InnerArmSubsystem extends SubsystemBase {
                                                                                 .withSlot(0)
                                                                                 .withEnableFOC(true);
   private long m_startTime;
-  private long m_absPosMeasurementCount = 0;
 
   private GenericEntry m_magnetOffsetEntry;
   private GenericEntry m_absAxlePosEntry;
@@ -69,7 +66,8 @@ public class InnerArmSubsystem extends SubsystemBase {
   private double m_positionError;
   private long m_elapsedTime;
   private FileRecorder m_fileRecorder;
-
+  private static boolean LOGGING_ACTIVE = FileRecorder.isFileRecorderAvail();
+ 
   /** Creates a new InnerArmSubsystem. */
   public InnerArmSubsystem(Supplier<String> currentStateName, 
                            IntSupplier currentSeqNo,
@@ -81,10 +79,7 @@ public class InnerArmSubsystem extends SubsystemBase {
     configInnerArmMotor();
     setupInnerArmPublishing();
     // Set boot-up inner arm setpoint to the safest possible position
-    m_innerArmSetpoint = IAC.VERTICAL_POS;
-    // Transfer default NOTE_PICKUP_POS to a variable so if needed it can
-    // be adjusted at runtime.
-    m_innerArmNotePickupPosSetpoint = IAC.NOTE_PICKUP_POS;
+    gotoVerticalUpPos();
     // Initialize avg Inner Arm Cancoder value
     m_avgInnerRawAbsPos = getRawInnerArmPos();
   }
@@ -105,26 +100,16 @@ public class InnerArmSubsystem extends SubsystemBase {
   public void adjustInnerArmSetpoint(double direction, boolean debug_on) {
     // direction, debug, and/or current state (WAITING_FOR_NOTE, if not debug)
     // have already been vetted by MasterArmSubsystem
-    double temp;
-    if (debug_on) {
-      m_innerArmSetpoint = m_innerArmSetpoint + (1.0 / 360.0) * direction;
-      m_innerArmSetpoint = limitInnerArmPosition(m_innerArmSetpoint);
-      gotoPosition(m_innerArmSetpoint);
-    } else {
-      temp = m_innerArmNotePickupPosSetpoint + (1/360) * direction;
-      System.out.println("IA temp pos = "+temp);
-      m_innerArmNotePickupPosSetpoint = limitInnerArmPosition(temp);
-      gotoPosition(m_innerArmNotePickupPosSetpoint);
-      System.out.println("Adjust IA Note Pickup "+m_innerArmNotePickupPosSetpoint);    
-    }
+    m_innerArmSetpoint = limitInnerArmPosition(m_innerArmSetpoint + (direction / 360.0));
+    gotoPosition(m_innerArmSetpoint);
   }
 
   /*********************************
    * check for reaching setpoints
    *********************************/
 
-  public boolean innerArmIsVertical() {
-    return innerArmIsAt(IAC.VERTICAL_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
+  public boolean innerArmIsVerticalUp() {
+    return innerArmIsAt(IAC.VERTICAL_UP_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
 
   public boolean innerArmIsAtBumperContactPos() {
@@ -146,6 +131,10 @@ public class InnerArmSubsystem extends SubsystemBase {
   public boolean innerArmIsHorizontalBackPos() {
     return innerArmIsAt(IAC.HORIZONTAL_BACK_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
+
+  public boolean innerArmIsHorizontalForwardPos() {
+    return innerArmIsAt(IAC.HORIZONTAL_FORWARD_POS, IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
+  }
   
   public boolean innerArmIsAtAmpScoringPos() {
     return innerArmIsAt(IAC.AMP_GOAL_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
@@ -164,14 +153,16 @@ public class InnerArmSubsystem extends SubsystemBase {
     m_elapsedTime = System.currentTimeMillis() - m_startTime;
 
     if (Math.abs(m_positionError) < IAC.ALLOWED_INNER_ARM_POS_ERROR) {
-      m_fileRecorder.recordMoveEvent("IA",
-                                     NoteEvent.SETPOINT_REACHED,
-                                     position,
-                                     m_positionError,
-                                     System.currentTimeMillis(),
-                                     m_elapsedTime,
-                                     m_currentStateName.get(),
-                                     m_currentSeqNo.getAsInt());
+      if (LOGGING_ACTIVE) {
+        m_fileRecorder.recordMoveEvent( "IA",
+                                        NoteEvent.SETPOINT_REACHED,
+                                        position,
+                                        m_positionError,
+                                        System.currentTimeMillis(),
+                                        m_elapsedTime,
+                                        m_currentStateName.get(),
+                                        m_currentSeqNo.getAsInt());
+      }
       return true;
     }
 
@@ -181,14 +172,16 @@ public class InnerArmSubsystem extends SubsystemBase {
     } else {
       // timeout has occured. Log event and force assume inner arm is at setpoint 
       // in order to avoid "hanging" the state machine (hopefully it is close enough).
-      m_fileRecorder.recordMoveEvent( "IA",
-                                      NoteEvent.TIMEOUT_OCCURED,
-                                      position,
-                                      m_positionError,
-                                      System.currentTimeMillis(),
-                                      m_elapsedTime,
-                                      m_currentStateName.get(),
-                                      m_currentSeqNo.getAsInt() );
+      if (LOGGING_ACTIVE) {
+        m_fileRecorder.recordMoveEvent( "IA",
+                                        NoteEvent.TIMEOUT_OCCURED,
+                                        position,
+                                        m_positionError,
+                                        System.currentTimeMillis(),
+                                        m_elapsedTime,
+                                        m_currentStateName.get(),
+                                        m_currentSeqNo.getAsInt() );
+      }
       return true;
     }
   }
@@ -208,16 +201,27 @@ public class InnerArmSubsystem extends SubsystemBase {
     m_innerArmSetpoint = position;
     m_innerArmMotor.setControl(m_innerArmMagicCtrl.withPosition(m_innerArmSetpoint));
     m_startTime = System.currentTimeMillis();
-    m_fileRecorder.recordReqEvent("IA",
-                                  NoteRequest.MOVE_INNER_ARM,
-                                  m_innerArmSetpoint,
-                                  m_startTime,
-                                  m_currentStateName.get(),
-                                  m_currentSeqNo.getAsInt());
+    if (LOGGING_ACTIVE) {
+      m_fileRecorder.recordReqEvent("IA",
+                                    NoteRequest.MOVE_INNER_ARM,
+                                    m_innerArmSetpoint,
+                                    m_startTime,
+                                    m_currentStateName.get(),
+                                    m_currentSeqNo.getAsInt());
+    }
   }
 
-  public void gotoVerticalPos() {
-    gotoPosition(IAC.VERTICAL_POS);
+  public void gotoVerticalUpPos() {
+    if (getAbsInnerArmPos() > IAC.VERTICAL_UP_POS) {
+      m_innerArmSetpoint = IAC.VERTICAL_UP_POS * IAC.INNER_ARM_CANCODER_TO_AXLE_RATIO;
+    } else {
+      m_innerArmSetpoint = IAC.VERTICAL_UP_POS;
+    }
+    gotoPosition(m_innerArmSetpoint);
+  }
+  
+  public void gotoVerticalDownPos() {
+    gotoPosition(IAC.VERTICAL_DOWN_POS);
   }
 
   public void gotoBumperContactPos() {
@@ -225,7 +229,7 @@ public class InnerArmSubsystem extends SubsystemBase {
   }
 
   public void gotoNotePickupPos() {
-    gotoPosition(m_innerArmNotePickupPosSetpoint);
+    gotoPosition(IAC.NOTE_PICKUP_POS);
   }
 
   public void gotoSpeakerShotPos(boolean isDistantSpeakerShot) {
@@ -240,6 +244,10 @@ public class InnerArmSubsystem extends SubsystemBase {
   public void gotoHorizontalBackPos() {
     gotoPosition(IAC.HORIZONTAL_BACK_POS);
   }
+
+  public void gotoHorizontalForwardPos() {
+    gotoPosition(IAC.HORIZONTAL_FORWARD_POS);
+  }
   
   public void gotoAmpShotPos() {
     gotoPosition(IAC.AMP_GOAL_POS);
@@ -249,11 +257,6 @@ public class InnerArmSubsystem extends SubsystemBase {
    * Configure Hardware methods 
    ****************************************/
   private void configInnerArmMotor() {
-    /*
-    var openLoopConfig = new OpenLoopRampsConfigs().withDutyCycleOpenLoopRampPeriod(0)
-                                                    .withVoltageOpenLoopRampPeriod(IAC.INNER_ARM_OPEN_LOOP_RAMP_PERIOD)
-                                                    .withTorqueOpenLoopRampPeriod(0);
-    */
     var closedLoopConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(0)
                                                         .withVoltageClosedLoopRampPeriod(IAC.INNER_ARM_CLOSED_LOOP_RAMP_PERIOD)
                                                         .withTorqueClosedLoopRampPeriod(0);
@@ -285,7 +288,6 @@ public class InnerArmSubsystem extends SubsystemBase {
     var innerArmConfig = new TalonFXConfiguration().withFeedback(feedbackConfig)
                                                    .withMotorOutput(motorOutputConfig)
                                                    .withCurrentLimits(currentLimitConfig)
-                                                   //.withOpenLoopRamps(openLoopConfig)
                                                    .withClosedLoopRamps(closedLoopConfig)
                                                    .withSlot0(pid0Config)
                                                    .withMotionMagic(motionMagicConfig);
@@ -312,51 +314,6 @@ public class InnerArmSubsystem extends SubsystemBase {
     return (getAbsInnerArmPos()-m_magnetOffset);
   }
 
-  public boolean innerArmHomeSensorIsTripped() {
-    return false;
-  }
-
-  // This method only works if an index sensor is added to allow InnerArm position to 
-  // be known absolutely, but independently of the CANcoder. Comparison of the two
-  // would allow checking that they are still in sync - if not, then this routine could be
-  // called. As written, this assumes an index sensor is located at the normal
-  // HOME, or IDLE position of the inner arm (IAC.VERTICAL_POS), where it spends aa
-  // fair amount of time.
-  public void checkMagnetOffset() {
-    if (innerArmHomeSensorIsTripped()) {
-      if (m_absPosMeasurementCount == 0) {
-        m_absPosMeasurementCount = 1;
-        m_avgRawHomePos = getRawInnerArmPos();
-      } else if (m_absPosMeasurementCount++ < 51) {
-        m_avgRawHomePos = (m_avgRawHomePos * .95) + (getRawInnerArmPos() * .05);
-      } else if (m_absPosMeasurementCount == 51) {
-        // CANcoder has been averaged for a full second while Home
-        // sensor is still active, so compare expected reading with current
-        // corrected reading. But only do this once per new arrival at sensor.
-        if (Math.abs(IAC.VERTICAL_POS - getAbsInnerArmPos()) > .003) {
-          m_magnetOffset = -m_avgRawHomePos;
-          configInnerArmCANcoder();
-        }
-      }
-    } else {
-      // reset the count - did not stay put long enough for a good average
-      m_absPosMeasurementCount = 0;
-    }
-  }
-
-  // This routine is designed to be called manually via an assigned button press,
-  // but only when the calibration stick is in place and both Arms are horizontal.
-  // Also, wait for average to stabilize - at least 5 seconds. As of now, only 
-  // used for InnerArm reset. The MasterArm is much more stable and does not need 
-  // frequent re-calibration.
-  // This reset is only good until the next RoboRio re-boot, so if happy with the
-  // new offset, edit the NotableConstants.java file at the earliest opportunity
-  // and change IAC.INNER_ARM_CANCODER_MAGNET_OFFSET to that new offset.
-  public void resetMagnetOffset() {
-    m_magnetOffset = -m_avgInnerRawAbsPos;
-    configInnerArmCANcoder();
-  }
-    
   /*************************************
    * Publish Inner Arm data methods
    ************************************/
@@ -380,13 +337,11 @@ public class InnerArmSubsystem extends SubsystemBase {
   
   // This method writes InnerArm data to the dashboard.
   private void publishInnerArmData() {
-    // SmartDashboard.putNumber("InnerCanRelPos ", m_innerArmCANcoder.getPosition().getValueAsDouble());
     m_avgInnerRawAbsPos = (m_avgInnerRawAbsPos * .95) + (getRawInnerArmPos() * .05);
     if ((m_count++ % 25) < .001) { // update the average every 1/2 sec to make it easier to copy
       SmartDashboard.putNumber("InnerAvgRawAbsPos ", m_avgInnerRawAbsPos);
     }
     SmartDashboard.putNumber("InnerCorrAbsPos ", getAbsInnerArmPos());
-    // SmartDashboard.putNumber("InnerMotorPos ", m_innerArmMotor.getPosition().getValueAsDouble());
 
     m_magnetOffsetEntry.setString(F.df4.format(m_magnetOffset));
     m_absAxlePosEntry.setString(F.df3.format(getAbsInnerArmPos()));
