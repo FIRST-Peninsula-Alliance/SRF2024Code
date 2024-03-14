@@ -210,7 +210,6 @@ public class ShooterSubsystem extends SubsystemBase {
    public void configAimingMotor() {
       reportRevError(m_aimMotor.restoreFactoryDefaults());
       reportRevError(m_aimMotor.setSmartCurrentLimit(SC.AIM_SMART_CURRENT_LIMIT));
-      reportRevError(m_aimMotor.setSecondaryCurrentLimit(SC.AIM_SECONDARY_CURRENT_LIMIT));
       // setInverted returns void
       m_aimMotor.setInverted(SC.INVERT_AIM_NEO550);
       reportRevError(m_aimMotor.setIdleMode(SC.AIM_MOTOR_NEUTRAL_MODE));
@@ -322,10 +321,16 @@ public class ShooterSubsystem extends SubsystemBase {
         break;
 
       case INITIALIZING_AIM_MOTOR:
-        // Aim encoder is the integrated NEO550 rotor, so is not absolute. Use the hardware stop
+        // Aim encoder is the integrated NEO550 rotor, so is not absolute. The plan was to use the hardware stop
         // designed into the aiming mechanism to create a current spike (via starting the aim motor on power up),
-        // which event is used to initialize the intergrated encoder zero value, regardless of where the 
-        // shooter's aim position was on start up. 
+        // which event was to be used to initialize the intergrated encoder zero value, regardless of where the 
+        // shooter's aim position was on start up. In practice this did not work, because the robot is not
+        // enabled on power up. Short of adding an hardware solution in the form of an index sensor, the
+        // new approach is to manually index the shooter aim to the indexed position before startup. To help
+        // ensure it stays that way, after every shot the software automatically returns the aim to the 
+        // indexed position. As a result, the INITIALIZING_AIM_MOTOR state will never be used, but is kept
+        // in the code base just in case a sensor approach is resurected (in which case both current and sensor 
+        // input detection will be needed). 
         if (((System.currentTimeMillis() - m_startTime) > 1000) 
             ||
             (m_aimMotor.getOutputCurrent() >= SC.AIM_DECTECTION_CURRENT_FOR_STOP)) {

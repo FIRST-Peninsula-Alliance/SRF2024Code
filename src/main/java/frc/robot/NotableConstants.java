@@ -42,9 +42,12 @@ public final class NotableConstants {           // As in all these constants are
         public static final double MASTER_ARM_ROTOR_TO_ENCODER_RATIO  = MASTER_ARM_PLANETARY_GEARBOX_RATIO *
                                                                         MASTER_ARM_CHAIN_DRIVE_GEAR_RATIO;
 
-        public static final double MASTER_ARM_CONT_CURRENT_LIMIT           = 40.0;
-        public static final double MASTER_ARM_PEAK_CURRENT_LIMIT           = 80.0;
-        public static final double MASTER_ARM_PEAK_CURRENT_DURATION        = 0.1;
+        // The master arm draws a lot of current for a brief time - approaching 60 Amps stator current -
+        // in order to rapidly reach the various setpoints. Try to allow that while still kicking in
+        // with protective current limits by using a combination of 
+        public static final double MASTER_ARM_SUPPLY_CURRENT_LIMIT         = 35.0;
+        public static final double MASTER_ARM_SUPPLY_CURRENT_THRESHOLD     = 70.0;
+        public static final double MASTER_ARM_SUPPLY_TIME_THRESHOLD        = 0.35;
         public static final boolean MASTER_ARM_ENABLE_CURRENT_LIMIT        = true;
         public static final double MASTER_ARM_STATOR_CURRENT_LIMIT         = 55.0;
         public static final boolean MASTER_ARM_ENABLE_STATOR_CURRENT_LIMIT = true;
@@ -266,7 +269,6 @@ public final class NotableConstants {           // As in all these constants are
         public static final boolean AIM_MOTOR_ENABLE_SOFT_LIMITS = true;
 
         public static final int  AIM_SMART_CURRENT_LIMIT     = 20;
-        public static final int  AIM_SECONDARY_CURRENT_LIMIT = 30;
         public static final double AIM_DECTECTION_CURRENT_FOR_STOP = 18.0;
 
         public static final double ALLOWED_SHOOTER_AIM_ERROR = 2.0/360.0;           // allow 2 deg error    

@@ -195,6 +195,8 @@ public class IntakeSubsystem extends SubsystemBase {
                                                                          // distance in cm
       SmartDashboard.putNumber("Intake sensor distance = ", m_intakeSensorDistance);
       if (m_intakeSensorDistance < IC.NOTE_ACQUIRED_DISTANCE_THRESHOLD) {
+        // If sensor is accurate, might replace mannual LT button. To help ensure reliability,
+        // add a trigger debounce time of at least .25 sec.
         //triggerNoteAcquired();
       }
     }

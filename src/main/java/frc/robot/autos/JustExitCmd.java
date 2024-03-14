@@ -42,13 +42,12 @@ public class JustExitCmd extends SequentialCommandGroup {
     Trajectory exitTrajectory =
         TrajectoryGenerator.generateTrajectory(
             // Start at the origin facing the -X direction, away from the
-            // speaker goal. Position bumpers up against the subwoofer 
-            // front, even if offset to one side (i.e. no angle shot with
-            // this auto). Because the subwoofer extends ~1 m into the field,
-            // the origin X is not really 0, but for now, consider it good.
+            // speaker goal, either against the alliance wall, or against the
+            // front of the subwolfer. Because the subwoofer extends ~1 m into the field,
+            // the origin X is not really 0 if up against it, but just ignore that.
             // On first test, a 2 m move resulted in closer to 8 m of movement. 
             // Need better tuning for the trajectory PIDs, but for now, set distance to
-            // just .5 m, expecting about 2 m result, which should clear the zone.
+            // just 1 m, expecting about 3 m result, which should clear the zone.
 
             new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
             List.of(new Translation2d(0.125, 0.0),
@@ -78,9 +77,9 @@ public class JustExitCmd extends SequentialCommandGroup {
               m_swerveDrive);
 
       addCommands(
-            new InstantCommand(() -> m_swerveDrive.resetOdometry(exitTrajectory.getInitialPose())),
-            swerveControllerCmd,
-            new InstantCommand(()-> m_swerveDrive.stop())
-            );
+                  new InstantCommand(() -> m_swerveDrive.resetOdometry(exitTrajectory.getInitialPose())),
+                  swerveControllerCmd,
+                  new InstantCommand(()-> m_swerveDrive.stop())
+                 );
     }
 }

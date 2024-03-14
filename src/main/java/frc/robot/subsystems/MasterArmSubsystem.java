@@ -600,9 +600,9 @@ public class MasterArmSubsystem extends SubsystemBase {
                                                     .withInverted(MAC.MASTER_ARM_MOTOR_INVERT)
                                                     .withPeakForwardDutyCycle(MAC.MASTER_ARM_OUTPUT_LIMIT_FACTOR)
                                                     .withPeakReverseDutyCycle(-MAC.MASTER_ARM_OUTPUT_LIMIT_FACTOR);
-    var currentLimitConfig = new CurrentLimitsConfigs().withSupplyCurrentLimit(MAC.MASTER_ARM_CONT_CURRENT_LIMIT)
-                                                       .withSupplyCurrentThreshold(MAC.MASTER_ARM_PEAK_CURRENT_LIMIT)
-                                                       .withSupplyTimeThreshold(MAC.MASTER_ARM_PEAK_CURRENT_DURATION)
+    var currentLimitConfig = new CurrentLimitsConfigs().withSupplyCurrentLimit(MAC.MASTER_ARM_SUPPLY_CURRENT_LIMIT)
+                                                       .withSupplyCurrentThreshold(MAC.MASTER_ARM_SUPPLY_CURRENT_THRESHOLD)
+                                                       .withSupplyTimeThreshold(MAC.MASTER_ARM_SUPPLY_TIME_THRESHOLD)
                                                        .withSupplyCurrentLimitEnable(MAC.MASTER_ARM_ENABLE_CURRENT_LIMIT)
                                                        .withStatorCurrentLimit(MAC.MASTER_ARM_STATOR_CURRENT_LIMIT)
                                                        .withStatorCurrentLimitEnable(MAC.MASTER_ARM_ENABLE_STATOR_CURRENT_LIMIT);
