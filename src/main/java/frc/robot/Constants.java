@@ -105,8 +105,7 @@ public final class Constants {
             double steerKI = 0.0;
             double steerKD = 0.0;
             double steerKF = 0.0;
-            InvertedValue driveMotorInvert = InvertedValue.CounterClockwise_Positive;       // TODO - Double check this!!!
-                                                                                            // Tsunami drives backwards from Black Knight
+            InvertedValue driveMotorInvert = InvertedValue.CounterClockwise_Positive;   // Tsunami is inverted from Black Knight
             boolean steerMotorInvert = true;
             SensorDirectionValue canCoderDir = SensorDirectionValue.CounterClockwise_Positive;
             
@@ -208,15 +207,17 @@ public final class Constants {
         public static final double PARK_ANGLE_RIGHT_DEG = 45;
         
         // Current Limiting motor protection - same for both module types
-        public static final int STEER_CONT_CURRENT_LIMIT = 25;
-        public static final int STEER_PEAK_CURRENT_LIMIT = 50;
-        public static final double STEER_PEAK_CURRENT_DURATION = 0.1;
+        // But different for NEO/SmartMAX:
+        public static final int  STEER_SMART_CURRENT_LIMIT     = 25;
+        public static final int  STEER_SECONDARY_CURRENT_LIMIT = 40;
         public static final boolean STEER_ENABLE_CURRENT_LIMIT = true;
-
-        public static final double DRIVE_CONT_CURRENT_LIMIT = 35.0;
-        public static final double DRIVE_PEAK_CURRENT_LIMIT = 65.0;
-        public static final double DRIVE_PEAK_CURRENT_DURATION = 0.1;
-        public static final boolean DRIVE_ENABLE_CURRENT_LIMIT = true;
+        // and Falcon/FX:
+        public static final double  DRIVE_SUPPLY_CURRENT_LIMIT          = 35.0;
+        public static final double  DRIVE_SUPPLY_CURRENT_THRESHOLD      = 65.0;
+        public static final double  DRIVE_SUPPLY_CURRENT_TIME_THRESHOLD = 0.1;
+        public static final boolean DRIVE_ENABLE_SUPPLY_CURRENT_LIMIT   = true;
+        public static final double  DRIVE_STATOR_CURRENT_LIMIT          = 35.0;
+        public static final boolean DRIVE_ENABLE_STATOR_CURRENT_LIMIT   = true;
 
         // Voltage compensation not used by CTRE anymore, but is for REV NEOs
         public static final double STEER_MOTOR_VOLTAGE_COMPENSATION = 12.0;
@@ -245,7 +246,7 @@ public final class Constants {
         // Best if getten by characterizing the robot, but these values worked
         // tolerably well in 2023 as is. Used during Auto mode moves, which are
         // tracked by Odometry.
-        public static final double MAX_ROBOT_SPEED_M_PER_SEC = 4.5; // 4.96 theoretically 
+        public static final double MAX_ROBOT_SPEED_M_PER_SEC     =  4.5; // 4.96 theoretically 
         public static final double MAX_ROBOT_ANG_VEL_RAD_PER_SEC = 11.0; // 11.96 theoretically 
 
         // Swerve output fixed limit values for teleop control (reduce if
@@ -253,13 +254,13 @@ public final class Constants {
         // (In Auto, tuning should set speeds to reasonable values, no need
         // to reduce them - in fact, just the opposite, want fastest possible
         // movements in Auto mode, consistent with safety).
-        public static final double OUTPUT_DRIVE_LIMIT_FACTOR = 0.7;     // Part of attempt to fix motor
-        public static final double OUTPUT_ROTATE_LIMIT_FACTOR = 0.7;    // on quick starts
+        public static final double OUTPUT_DRIVE_LIMIT_FACTOR  = 0.7;    // Part of attempt to fix motor
+        public static final double OUTPUT_ROTATE_LIMIT_FACTOR = 0.7;    // stutter on quick starts
 
         // When monitored while set at -1 to 1, seemed like the Steering PID output 
         // did not generate percent outputs greater than about .4
         public static final double MIN_STEER_CLOSED_LOOP_OUTPUT = -0.6;
-        public static final double MAX_STEER_CLOSED_LOOP_OUTPUT = 0.6;
+        public static final double MAX_STEER_CLOSED_LOOP_OUTPUT =  0.6;
 
         /* Default Motor Neutral Modes */
         public static final CANSparkMax.IdleMode STEER_MOTOR_NEUTRAL_MODE = CANSparkMax.IdleMode.kCoast;
@@ -277,7 +278,7 @@ public final class Constants {
         public static final class FL_Mod0 {
             public static final int driveMotorID = 1;
             public static final int steerMotorID = 2;
-            public static final int canCoderID = 1;
+            public static final int canCoderID   = 1;
             // TODO: measure and enter Mod0 absolute wheel angle offset in degrees here
             public static final Rotation2d angleOffset = Rotation2d.fromDegrees(61.5);
             public static final ShuffleboardLayout sBE_Layout0 = 
@@ -298,7 +299,7 @@ public final class Constants {
         public static final class FR_Mod1 {
             public static final int driveMotorID = 3;
             public static final int steerMotorID = 4;
-            public static final int canCoderID = 2;
+            public static final int canCoderID   = 2;
             public static final Rotation2d angleOffset = Rotation2d.fromDegrees(337.41);                             
             public static final ShuffleboardLayout sBE_Layout1 = 
                                      sbt.getLayout("FR_Mod1", BuiltInLayouts.kList)
@@ -318,7 +319,7 @@ public final class Constants {
         public static final class BL_Mod2 {
             public static final int driveMotorID = 5;
             public static final int steerMotorID = 6;
-            public static final int canCoderID = 3;
+            public static final int canCoderID   = 3;
             public static final Rotation2d angleOffset = Rotation2d.fromDegrees(261.7);
             public static final ShuffleboardLayout sBE_Layout2 = 
                                     sbt.getLayout("BL_Mod2", BuiltInLayouts.kList)
@@ -338,7 +339,7 @@ public final class Constants {
         public static final class BR_Mod3 {
             public static final int driveMotorID = 7;
             public static final int steerMotorID = 8;
-            public static final int canCoderID = 4;
+            public static final int canCoderID   = 4;
             public static final Rotation2d angleOffset = Rotation2d.fromDegrees(34.58);
             public static final ShuffleboardLayout sBE_Layout3 = 
                                     sbt.getLayout("BR_Mod3", BuiltInLayouts.kList)
@@ -375,22 +376,28 @@ public final class Constants {
         // Elevator gear ratio
         public static double ELEVATOT_GEAR_RATIO = 10;
 
-        public static final int CLIMB_CONT_CURRENT_LIMIT = 50;
-        public static final int CLIMB_PEAK_CURRENT_LIMIT = 90;
-        public static final double CLIMB_PEAK_CURRENT_DURATION = 0.1;
-        public static final boolean CLIMB_ENABLE_CURRENT_LIMIT = true;
+        public static final double  CLIMB_SUPPLY_CURRENT_LIMIT          = 50.0;
+        public static final double  CLIMB_SUPPLY_CURRENT_THRESHOLD      = 90.0;
+        public static final double  CLIMB_SUPPLY_CURRENT_TIME_THRESHOLD =  0.1;
+        public static final boolean CLIMB_ENABLE_SUPPLY_CURRENT_LIMIT   = true;
+        public static final double  CLIMB_STATOR_CURRENT_LIMIT          = 50.0;
+        public static final boolean CLIMB_ENABLE_STATOR_CURRENT_LIMIT   = true;
 
         public static final double CLIMB_OUTPUT_LIMIT_FACTOR = 1.0;
 
-        public static final double ELEVATOR_MIN_POS = -2.0;
-        public static final double ELEVATOR_MAX_POS = 122.0;
+        public static final double ELEVATOR_MIN_POS  = -2.0;            // only for legacy note
+        public static final double ELEVATOR_MAX_POS = 122.0;            // current safety thresholds used instead
 
-        public static final double CLIMBER_DUTY_CYCLE = 1.0;
+        public static final int ELEVATOR_SMART_CURRENT_LIMIT     = 16;
+        public static final int ELEVATOR_SECONDARY_CURRENT_LIMIT = 20;
+
+        public static final double CLIMBER_DUTY_CYCLE  = 1.0;
         public static final double ELEVATOR_DUTY_CYCLE = 0.32;
-        public static final double ELEVATOR_SAFETY_THRESHOLD_CURRENT_LIMIT = 20;
-        public static final long ELEVATOR_INRUSH_LOCKOUT_TIME = 350;      // ms
-        public static final long CLIMB_WINCH_INRUSH_LOCKOUT_TIME = 400;            // ms
-        public static final double WINCH_SAFETY_THRESHOLD_CURRENT_LIMIT = 20;
+
+        public static final int    ELEVATOR_SAFETY_THRESHOLD_CURRENT_LIMIT  = 15;
+        public static final long   ELEVATOR_INRUSH_LOCKOUT_TIME             = 350;      // ms
+        public static final long   CLIMB_WINCH_INRUSH_LOCKOUT_TIME          = 400;            // ms
+        public static final double WINCH_SAFETY_THRESHOLD_CURRENT_LIMIT     = 40.0;
     }
 
     /***********************************************************
@@ -418,14 +425,5 @@ public final class Constants {
         public static final double AUTO_SPEED_FACTOR_FOR_SCORING = 0.5;
         public static final double AUTO_SPEED_FACTOR_GENERIC = 0.4;		// TODO make 0.6
         public static final double AUTO_ACCEL_FACTOR_GENERIC = 0.4;		// and 0.5
-
-        public static final double AUTO_SPEED_FACTOR_FOR_PLATFORM = .4;
-        public static final double AUTO_SPEED_FACTOR_FOR_BACKWARDS_PLATFORM = 1.15;
-        public static final double AUTO_SPEED_FACTOR_FOR_BALANCE = 0.4;
-        public static final double MAX_OUTPUT_FOR_BALANCE = 0.7;
-
-        public static final double BALANCING_DRIVE_KP = 0.005; // P (Proportional) constant of a PID loop
-        public static final double BALANCING_GOAL_DEGREES = 0;
-        public static final double BALANCING_ANGLE_THRESHOLD_DEGREES = 1.25;
     }
 }

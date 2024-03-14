@@ -40,7 +40,6 @@ public class ShooterSubsystem extends SubsystemBase {
   // and at the end of the timeout the motor is stopped.
   private TalonFX m_shooterMotor = new TalonFX(SC.SHOOTER_FALCON_ID, Constants.CANIVORE_BUS_NAME);
   private CANSparkMax m_aimMotor = new CANSparkMax(SC.AIM_NEO550_ID, MotorType.kBrushless);
- 
   private SparkPIDController m_aimController = m_aimMotor.getPIDController() ;
   private RelativeEncoder m_integratedAimEncoder = m_aimMotor.getEncoder();
   private double m_shooterVoltageOut;
@@ -56,6 +55,7 @@ public class ShooterSubsystem extends SubsystemBase {
                                                        .withEnableFOC(true)
                                                        .withUpdateFreqHz(50); 
   private enum ShooterState {
+    INITIALIZING_AIM_MOTOR,
     IDLE,
     PREPPING_TO_SHOOT,
     WAITING_FOR_SHOT,
@@ -77,14 +77,20 @@ public class ShooterSubsystem extends SubsystemBase {
   
     configShooterMotor();
     configAimingMotor();
-    m_shooterStatus = ShooterState.IDLE;
-    m_shooterVoltageOut = SC.SHOOTER_VOLTAGE_OUT_NEAR;
-    m_aimTargetPos = SC.AIM_POSITION_NEAR_SHOT;
 
+    m_shooterVoltageOut = SC.SHOOTER_VOLTAGE_OUT_NEAR;
     m_isFarShot = false;
+
+    m_shooterStatus = ShooterState.IDLE;
+    // m_aimController.setReference(-(SC.MAX_AIM_POSITION+2), CANSparkMax.ControlType.kPosition);
+    // m_startTime = System.currentTimeMillis();
   }
 
-  // Set shooter speed and aim
+  /***********************************************************************
+   * Methods called from MasterArm Conductor to synchronize note handlers
+   * ********************************************************************/
+  
+   // Set shooter speed and aim in prep for a shot
   public void prepareToShoot(boolean isFarShot) {
     m_isFarShot = isFarShot;
     if (m_isFarShot) {     // setup for far shot
@@ -111,12 +117,14 @@ public class ShooterSubsystem extends SubsystemBase {
     }
   }
 
+  // Report when prep is complete
   public boolean isReadyToShoot() {
     // When up to speed, or upon a timeout, the periodic method will
     // change the ShooterState
     return (m_shooterStatus == ShooterState.WAITING_FOR_SHOT);
   }
 
+  // Get informed when intake subsystem is told to eject
   public void shotInitiated() {
     // This is just a sync method to let the shooter know exactly when
     // a shot is begun. This allows better inrush current lockout for
@@ -134,6 +142,7 @@ public class ShooterSubsystem extends SubsystemBase {
     }
   }
 
+  // This is a polled method that reports when a current spike has been detected upon a shot (see periodic())
   public boolean isShotDetected() {
     // The periodic method will change the ShooterState to SHOT_DETECTED 
     // after the Amperage spike that occurs upon a shot 
@@ -146,11 +155,13 @@ public class ShooterSubsystem extends SubsystemBase {
     return (m_shooterStatus == ShooterState.SHOT_DETECTED);
   }
 
+  // method used to shut down the shooter after a shot
   public void cancelShooter() {
     // The shooter waits for the MasterArmSystem to tell it to
     // stop, which will generally be governed by the intakeSubsystem
     // timing out after the call to eject.
     m_shooterMotor.setControl(m_shooterRequest.withOutput(0.0));
+    m_aimController.setReference(SC.AIM_POSITION_NEAR_SHOT, CANSparkMax.ControlType.kPosition);
     m_shooterStatus = ShooterState.IDLE;
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordShooterEvent(NoteRequest.CANCEL_SHOT,
@@ -198,7 +209,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
    public void configAimingMotor() {
       reportRevError(m_aimMotor.restoreFactoryDefaults());
-      reportRevError(m_aimMotor.setSmartCurrentLimit(SC.AIM_CONT_CURRENT_LIMIT));
+      reportRevError(m_aimMotor.setSmartCurrentLimit(SC.AIM_SMART_CURRENT_LIMIT));
+      reportRevError(m_aimMotor.setSecondaryCurrentLimit(SC.AIM_SECONDARY_CURRENT_LIMIT));
       // setInverted returns void
       m_aimMotor.setInverted(SC.INVERT_AIM_NEO550);
       reportRevError(m_aimMotor.setIdleMode(SC.AIM_MOTOR_NEUTRAL_MODE));
@@ -210,13 +222,13 @@ public class ShooterSubsystem extends SubsystemBase {
                                                     SC.MAX_AIM_CLOSED_LOOP_OUTPUT));
       reportRevError(m_aimController.setFeedbackDevice(m_integratedAimEncoder));
       reportRevError(m_aimController.setPositionPIDWrappingEnabled(false));
-      //reportRevError(m_aimController.setPositionPIDWrappingMinInput(0));
-      //reportRevError(m_aimController.setPositionPIDWrappingMaxInput(360));
-      reportRevError(m_aimMotor.burnFlash());     // Do this durng development, but not
+      // reportRevError(m_aimMotor.burnFlash());     // Do this durng development, but not
                                                   // routinely, to preserve the life of the
                                                   // flash memory. Is it even necessary, since
                                                   // all registers (except ID?) are written 
                                                   // via code on every bootup?
+      // Do not set software limits. TODO - set limits to allow initialize movement, then reset to normal
+      // when initialize is compelte.
   }
 
 /*
@@ -278,8 +290,7 @@ public class ShooterSubsystem extends SubsystemBase {
         break;
 
       case WAITING_FOR_SHOT:
-        // Look for current spike and set ShooterState to SHOT_DETECTED
-        // if found
+        // Look for current spike and set ShooterState to SHOT_DETECTED if found
         m_elapsedTime = System.currentTimeMillis() - m_startTime;
         if (m_shooterMotor.getSupplyCurrent().getValueAsDouble()
             >
@@ -295,7 +306,7 @@ public class ShooterSubsystem extends SubsystemBase {
                                             m_currentSeqNo.getAsInt());
           }
           m_shooterStatus = ShooterState.SHOT_DETECTED;
-        } else if (m_elapsedTime > 600) {
+        } else if (m_elapsedTime > 700) {
           if (LOGGING_ACTIVE) {
             m_fileRecorder.recordMoveEvent( "Shooter (wait for shot), ",
                                             NoteEvent.TIMEOUT_OCCURED,
@@ -310,8 +321,27 @@ public class ShooterSubsystem extends SubsystemBase {
         }
         break;
 
-      case SHOT_DETECTED:
-      default:                // Nothing to do, no timeout
+      case INITIALIZING_AIM_MOTOR:
+        // Aim encoder is the integrated NEO550 rotor, so is not absolute. Use the hardware stop
+        // designed into the aiming mechanism to create a current spike (via starting the aim motor on power up),
+        // which event is used to initialize the intergrated encoder zero value, regardless of where the 
+        // shooter's aim position was on start up. 
+        if (((System.currentTimeMillis() - m_startTime) > 1000) 
+            ||
+            (m_aimMotor.getOutputCurrent() >= SC.AIM_DECTECTION_CURRENT_FOR_STOP)) {
+          System.out.println("Initial Aim position reported when against physical stop = "+m_integratedAimEncoder.getPosition());
+          // Initialize the actual AIM position, allowing for tension
+          m_integratedAimEncoder.setPosition(-2.0);
+          // Then take the tension off the hardware stop
+          m_aimTargetPos = SC.AIM_POSITION_NEAR_SHOT;
+          m_aimController.setReference(m_aimTargetPos, CANSparkMax.ControlType.kPosition);
+          // And change the shooter state to IDLE
+          m_shooterStatus = ShooterState.IDLE;
+        }
+        break;
+
+      case SHOT_DETECTED:     // Nothing to do. MasterArmSubsystem will call cancelShooter() when appropriate
+        default:
         break;
     }
   }

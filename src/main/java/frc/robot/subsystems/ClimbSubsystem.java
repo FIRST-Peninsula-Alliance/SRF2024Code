@@ -181,13 +181,15 @@ public class ClimbSubsystem extends SubsystemBase {
     var openLoopRampConfig = new OpenLoopRampsConfigs().withDutyCycleOpenLoopRampPeriod(CC.CLIMB_OPEN_LOOP_RAMP_PERIOD)
                                                        .withVoltageOpenLoopRampPeriod(CC.CLIMB_OPEN_LOOP_RAMP_PERIOD);
                                                        //.withTorqueOpenLoopRampPeriod(0);
-    var currentLimitConfig = new CurrentLimitsConfigs().withSupplyCurrentLimit(CC.CLIMB_CONT_CURRENT_LIMIT)
-                                                       .withSupplyCurrentThreshold(CC.CLIMB_PEAK_CURRENT_LIMIT)
-                                                       .withSupplyTimeThreshold(CC.CLIMB_PEAK_CURRENT_DURATION)
-                                                       .withSupplyCurrentLimitEnable(CC.CLIMB_ENABLE_CURRENT_LIMIT);
+    var currentLimitConfig = new CurrentLimitsConfigs().withSupplyCurrentLimit(CC.CLIMB_SUPPLY_CURRENT_LIMIT)
+                                                       .withSupplyCurrentThreshold(CC.CLIMB_SUPPLY_CURRENT_THRESHOLD)
+                                                       .withSupplyTimeThreshold(CC.CLIMB_SUPPLY_CURRENT_TIME_THRESHOLD)
+                                                       .withSupplyCurrentLimitEnable(CC.CLIMB_ENABLE_SUPPLY_CURRENT_LIMIT)
+                                                       .withStatorCurrentLimit(CC.CLIMB_STATOR_CURRENT_LIMIT)
+                                                       .withStatorCurrentLimitEnable(CC.CLIMB_ENABLE_STATOR_CURRENT_LIMIT);
     var climbConfig = new TalonFXConfiguration().withMotorOutput(climbOutputConfig)
-                                                 .withCurrentLimits(currentLimitConfig)
-                                                 .withOpenLoopRamps(openLoopRampConfig);
+                                                .withCurrentLimits(currentLimitConfig)
+                                                .withOpenLoopRamps(openLoopRampConfig);
     StatusCode status = m_climbMotor.getConfigurator().apply(climbConfig);
 
     if (! status.isOK() ) {

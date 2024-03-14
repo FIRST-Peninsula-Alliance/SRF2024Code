@@ -30,23 +30,26 @@ public final class NotableConstants {           // As in all these constants are
         public static final NeutralModeValue MASTER_ARM_MOTOR_NEUTRAL_MODE = NeutralModeValue.Brake;
         public static final InvertedValue MASTER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
 
-        public static final int MASTER_ARM_ENCODER_ID = 1;
-        public static final double MASTER_ARM_ENCODER_MAGNET_OFFSET = -0.2012;        // was -.0351;     // was -0.037;
+        public static final int MASTER_ARM_ENCODER_ID = 10;
+        public static final double MASTER_ARM_ENCODER_MAGNET_OFFSET = -0.20411;
         public static final AbsoluteSensorRangeValue MASTER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue MASTER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
         // Setup for fused remote sensor, 1:1 on output shaft (possible with licensed Phoenix6 Pro)
-        public static final double MASTER_ARM_ENCODER_TO_AXLE_RATIO = 1.0;
+        public static final double MASTER_ARM_ENCODER_TO_AXLE_RATIO   = 1.0;
         public static final double MASTER_ARM_PLANETARY_GEARBOX_RATIO = 30;
-        public static final double MASTER_ARM_CHAIN_DRIVE_GEAR_RATIO = 30.0 / 12.0;
-        public static final double MASTER_ARM_ROTOR_TO_ENCODER_RATIO = MASTER_ARM_PLANETARY_GEARBOX_RATIO *
-                                                                       MASTER_ARM_CHAIN_DRIVE_GEAR_RATIO;
-        public static final int MASTER_ARM_CONT_CURRENT_LIMIT = 40;
-        public static final int MASTER_ARM_PEAK_CURRENT_LIMIT = 90;
-        public static final double MASTER_ARM_PEAK_CURRENT_DURATION = 0.1;
-        public static final boolean MASTER_ARM_ENABLE_CURRENT_LIMIT = true;
+        public static final double MASTER_ARM_CHAIN_DRIVE_GEAR_RATIO  = 30.0 / 12.0;
+        public static final double MASTER_ARM_ROTOR_TO_ENCODER_RATIO  = MASTER_ARM_PLANETARY_GEARBOX_RATIO *
+                                                                        MASTER_ARM_CHAIN_DRIVE_GEAR_RATIO;
 
-        public static final double MASTER_ARM_OPEN_LOOP_RAMP_PERIOD = 0.25;
+        public static final double MASTER_ARM_CONT_CURRENT_LIMIT           = 40.0;
+        public static final double MASTER_ARM_PEAK_CURRENT_LIMIT           = 80.0;
+        public static final double MASTER_ARM_PEAK_CURRENT_DURATION        = 0.1;
+        public static final boolean MASTER_ARM_ENABLE_CURRENT_LIMIT        = true;
+        public static final double MASTER_ARM_STATOR_CURRENT_LIMIT         = 55.0;
+        public static final boolean MASTER_ARM_ENABLE_STATOR_CURRENT_LIMIT = true;
+
+        public static final double MASTER_ARM_OPEN_LOOP_RAMP_PERIOD   = 0.25;
         public static final double MASTER_ARM_CLOSED_LOOP_RAMP_PERIOD = 0.0;
 
         //Master Arm Motor PID Values
@@ -54,41 +57,41 @@ public final class NotableConstants {           // As in all these constants are
         public static final double MASTER_ARM_KI = 0.0;
         public static final double MASTER_ARM_KD = 1.0;
         public static final double MASTER_ARM_KF = 0.0;
-        // Divide SYSID values by 12 to convert from volts to percent output for CTRE
         public static final double MASTER_ARM_KS = 0.25; 
         public static final double MASTER_ARM_KV = 8.0;
         public static final double MASTER_ARM_KA = 0.6;
         public static final double MASTER_ARM_KG = 0.35;
         public static final double MASTER_ARM_MOTION_MAGIC_ACCEL = 8.0;
-        public static final double MASTER_ARM_MOTION_MAGIC_VEL = 4.0;
-        public static final double MASTER_ARM_MOTION_MAGIC_kA = 0;
-        public static final double MASTER_ARM_MOTION_MAGIC_kV = 0;
-        public static final double MASTER_ARM_MOTION_MAGIC_JERK = 30;
+        public static final double MASTER_ARM_MOTION_MAGIC_VEL   = 4.0;
+        public static final double MASTER_ARM_MOTION_MAGIC_kA    = 0.0;
+        public static final double MASTER_ARM_MOTION_MAGIC_kV    = 0.0;
+        public static final double MASTER_ARM_MOTION_MAGIC_JERK  = 30.0;
 
         public static final double MIN_MASTER_ARM_CLOSED_LOOP_OUTPUT = -1.0;
-        public static final double MAX_MASTER_ARM_CLOSED_LOOP_OUTPUT = 1.0;
-        public static final double MASTER_ARM_OUTPUT_LIMIT_FACTOR = 0.8;
+        public static final double MAX_MASTER_ARM_CLOSED_LOOP_OUTPUT =  1.0;
+        public static final double MASTER_ARM_OUTPUT_LIMIT_FACTOR    =  0.8;
 
         // Position units are all in rotations
         public static final double DISTANT_SPEAKER_SHOT_POS     = -0.19705;
         public static final double INDEXED_SPEAKER_SHOT_POS     = -0.2317;
         public static final double LOW_SAFE_TO_ROTATE_IN_POS    = -0.2116;
         public static final double LOW_SAFE_TO_ROTATE_OUT_POS   = -0.17;
-        public static final double NOTE_PICKUP_POS              = -0.1665;
+        public static final double NOTE_PICKUP_POS              = -0.154;
         public static final double MID_SAFE_TO_ROTATE_POS       = -0.125;
         public static final double HIGH_SAFE_TO_ROTATE_POS      =  0.19;
         public static final double AMP_SHOT_POS                 =  0.2466;
         public static final double MASTER_ARM_HORIZ_POS         =  0.0;
 
         public static final double ALLOWED_MASTER_ARM_POS_ERROR = 1.5 / 360.0;
-        public static final long ALLOWED_MILLIS_MA_SMALL_MOVE   = 400;
-        public static final long ALLOWED_MILLIS_MA_LARGE_MOVE   = 700;
+        public static final long   ALLOWED_MILLIS_MA_SMALL_MOVE = 400;
+        public static final long   ALLOWED_MILLIS_MA_LARGE_MOVE = 700;
 
-        public static final double MAX_MASTER_ARM_ROTATIONS     =  0.26;
-        public static final double MIN_MASTER_ARM_ROTATIONS     = -0.245;
+        public static final double  MAX_MASTER_ARM_SOFT_LIMIT     =  0.26;
+        public static final double  MIN_MASTER_ARM_SOFT_LIMIT     = -0.245;
+        public static final boolean ENABLE_MASTER_ARM_SOFT_LIMITS = true;
 
-        public static final int MASTER_ARM_DATA_COL = 0;
-        public static final int MASTER_ARM_DATA_ROW = 0;
+        public static final int MASTER_ARM_DATA_COL      = 0;
+        public static final int MASTER_ARM_DATA_ROW      = 0;
         public static final int MASTER_ARM_DATA_LIST_HGT = 8;
     }
 
@@ -100,19 +103,22 @@ public final class NotableConstants {           // As in all these constants are
         public static final NeutralModeValue INNER_ARM_MOTOR_NEUTRAL_MODE = NeutralModeValue.Brake;
         public static final InvertedValue INNER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
         
-        public static final int INNER_ARM_CANCODER_ID = 2;
-        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = .9222;  // was .1713867;  // was.28955;      //was 0.2853;       // rotations
+        public static final int INNER_ARM_CANCODER_ID = 11;
+        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = 0.131839;
         public static final AbsoluteSensorRangeValue INNER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue INNER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
-        public static final double INNER_ARM_CANCODER_TO_AXLE_RATIO = 20.0/18.0;        // Chain drive sprockets
+        public static final double INNER_ARM_CANCODER_TO_AXLE_RATIO  = 20.0/18.0;        // Chain drive sprockets
         public static final double INNER_ARM_ROTOR_TO_CANCODER_RATIO = 30.0;            // Panetary gear box
-        public static final int INNER_ARM_CONT_CURRENT_LIMIT = 30;
-        public static final int INNER_ARM_PEAK_CURRENT_LIMIT = 80;
-        public static final double INNER_ARM_PEAK_CURRENT_DURATION = 0.1;
-        public static final boolean INNER_ARM_ENABLE_CURRENT_LIMIT = true;
 
-        public static final double INNER_ARM_OPEN_LOOP_RAMP_PERIOD = 0.25;
+        public static final double  INNER_ARM_CONT_CURRENT_LIMIT          = 16.0;
+        public static final double  INNER_ARM_PEAK_CURRENT_LIMIT          = 36.0;
+        public static final double  INNER_ARM_PEAK_CURRENT_DURATION       = 0.1;
+        public static final boolean INNER_ARM_ENABLE_CURRENT_LIMIT        = true;
+        public static final double  INNER_ARM_STATOR_CURRENT_LIMIT        = 14.0;
+        public static final boolean INNER_ARM_ENABLE_STATOR_CURRENT_LIMIT = true;
+
+        public static final double INNER_ARM_OPEN_LOOP_RAMP_PERIOD   = 0.25;
         public static final double INNER_ARM_CLOSED_LOOP_RAMP_PERIOD = 0.5;
 
         //INNER Arm Motor PID Values
@@ -139,12 +145,12 @@ public final class NotableConstants {           // As in all these constants are
         public static final double HORIZONTAL_FORWARD_POS   =  0.0;
         public static final double VERTICAL_UP_POS          = -0.25;
         public static final double VERTICAL_DOWN_POS        =  0.25;
-        public static final double HORIZONTAL_BACK_POS      = -0.445;   // technically -.5, but this is safer
+        public static final double HORIZONTAL_BACK_POS      = -0.445;   // -.5, but with safer margin of error
 
         public static final double BUMPER_CONTACT_POS       =  0.12;
-        public static final double NOTE_PICKUP_POS          =  0.136;
-        public static final double DISTANT_SPEAKER_GOAL_POS = -0.39;
-        public static final double INDEXED_SPEAKER_GOAL_POS = -0.35;
+        public static final double NOTE_PICKUP_POS          =  0.13;
+        public static final double DISTANT_SPEAKER_GOAL_POS = -0.342;
+        public static final double INDEXED_SPEAKER_GOAL_POS = -0.315;
         public static final double AMP_GOAL_POS             =  0.041;
 
         public static final double ALLOWED_INNER_ARM_POS_ERROR  = 5.0 / 360.0;
@@ -161,11 +167,12 @@ public final class NotableConstants {           // As in all these constants are
 
         // to ensure inner arm always rotates in desired direction,
         // do not enable continuoue mode.
-        public static final double MAX_INNER_ARM_LIMIT =  0.25;
-        public static final double MIN_INNER_ARM_LIMIT = -1.10;
+        public static final double  MAX_INNER_ARM_SOFT_LIMIT     =  0.25;
+        public static final double  MIN_INNER_ARM_SOFT_LIMIT     = -0.5;
+        public static final boolean ENABLE_INNER_ARM_SOFT_LIMITS = true;
  
-        public static final int INNER_ARM_DATA_COL = 2;
-        public static final int INNER_ARM_DATA_ROW = 0;
+        public static final int INNER_ARM_DATA_COL      = 2;
+        public static final int INNER_ARM_DATA_ROW      = 0;
         public static final int INNER_ARM_DATA_LIST_HGT = 8;
     }
 
@@ -174,43 +181,44 @@ public final class NotableConstants {           // As in all these constants are
  ********************************************************************/
     public static final class IC {              // "Intake Constants"
         public static final int INTAKE_FALCON_MOTOR_ID = 12;
-        public static final int INTAKE_PWM_SENSOR_PORT_ID = 0;
         public static final boolean INVERT_INNER_ARM_FALCON = false;
+        public static final int INTAKE_PWM_SENSOR_PORT_ID = 0;
 
-        public static final int INTAKE_CONT_CURRENT_LIMIT = 25;
-        public static final int INTAKE_PEAK_CURRENT_LIMIT = 50;
-        public static final double INTAKE_PEAK_CURRENT_DURATION = 0.1;
-        public static final boolean INTAKE_ENABLE_CURRENT_LIMIT = true;
+        public static final double  INTAKE_CONT_CURRENT_LIMIT          = 15.0;
+        public static final double  INTAKE_PEAK_CURRENT_LIMIT          = 30.0;
+        public static final double  INTAKE_PEAK_CURRENT_DURATION       = 0.1;
+        public static final boolean INTAKE_ENABLE_CURRENT_LIMIT        = true;
+        public static final double  INTAKE_STATOR_CURRENT_LIMIT        = 12.0;
+        public static final boolean INTAKE_ENABLE_STATOR_CURRENT_LIMIT = true;        
 
-        public static final double INTAKE_OPEN_LOOP_RAMP_PERIOD = 0.2;
-        public static final double INTAKE_CLOSED_LOOP_RAMP_PERIOD = 0.0;
+        public static final double  INTAKE_OPEN_LOOP_RAMP_PERIOD   = 0.2;
+        public static final double  INTAKE_CLOSED_LOOP_RAMP_PERIOD = 0.0;
 
         // With a total intake gear ratio of 13.33,
         // max output shaft rotation velocity is ~ 480 RPM, or 8 RPS. 
         // With roller diameter of ~ 1.5", max belt speed is ~ 37 in/sec. With a Note diameter of 14",
         // and needing to pull in slightly more then 1/2 of that for retention, if we want acqusition in
         // under 1/2 second, it seems reasonable to shoot for a working belt speed of 18 to 24 in/sec.
-        public static final double INTAKE_GEAR_RATIO = 10 * (24/18);
+        public static final double INTAKE_GEAR_RATIO                   = 10 * (24/18);
         public static final NeutralModeValue INTAKE_MOTOR_NEUTRAL_MODE = NeutralModeValue.Coast;
-        public static final InvertedValue INTAKE_MOTOR_INVERT = InvertedValue.CounterClockwise_Positive;
-        public static final double INTAKE_CONTROLLER_OUTPUT_LIMIT = 1.0;
+        public static final InvertedValue INTAKE_MOTOR_INVERT          = InvertedValue.CounterClockwise_Positive;
+        public static final double INTAKE_CONTROLLER_OUTPUT_LIMIT      = 1.0;
     
         public static final double INTAKE_BASE_SPEED = 0.9;         // Runs in DutyCycleOut mode
 
         // The following are percent output modifiers. They also serve to identify the purpose
         // of operation of active intake belts
-        public static final double HOLD_NOTE = .25;
-        public static final double ACQUIRE_NOTE = 1.0;
-        public static final double EJECT_NOTE = -1.0;
+        public static final double HOLD_NOTE    =  0.25;
+        public static final double ACQUIRE_NOTE =  1.0;
+        public static final double EJECT_NOTE   = -1.0;
 
-        public static final double NOTE_ACQUIRED_DISTANCE_THRESHOLD = 30;   // anything less than 30 cm
-                                                                            // means note detected
+        public static final double NOTE_ACQUIRED_DISTANCE_THRESHOLD = 30.0;     // anything less than 30 cm
+                                                                                // means note detected
     }
 
     /********************************************************************
      * Shooter Constants
      ********************************************************************/
-
     public static final class SC {             // Shooter constants
         public static final int SHOOTER_FALCON_ID = 13;     // Runs in VoltageOut mode
 
@@ -218,25 +226,26 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue SHOOTER_MOTOR_INVERT = InvertedValue.CounterClockwise_Positive;
         public static final double SHOOTER_CONTROLLER_OUTPUT_LIMIT = 1.0;
         
-        public static final int SHOOTER_CONT_CURRENT_LIMIT = 40;
-        public static final int SHOOTER_PEAK_CURRENT_LIMIT = 100;
-        public static final double SHOOTER_PEAK_CURRENT_DURATION = 0.1;
-        public static final boolean SHOOTER_ENABLE_CURRENT_LIMIT = true;
+        public static final double  SHOOTER_CONT_CURRENT_LIMIT          = 20.0;
+        public static final double  SHOOTER_PEAK_CURRENT_LIMIT          = 80.0;
+        public static final double  SHOOTER_PEAK_CURRENT_DURATION       = 0.1;
+        public static final boolean SHOOTER_ENABLE_CURRENT_LIMIT        = true;
+        public static final double  SHOOTER_STATOR_CURRENT_LIMIT        = 18.0;
+        public static final boolean SHOOTER_ENABLE_STATOR_CURRENT_LIMIT = true;
 
         public static final double SHOOTER_OPEN_LOOP_RAMP_PERIOD = 0.2;
         
-        public static final double SHOOTER_VOLTAGE_OUT_NEAR = 9.0;       // volts, use 9.0 for double wheel shooter
-        public static final double SHOOTER_VOLTAGE_OUT_FAR = 11.5;
-        public static final double SHOOTER_VELOCITY_NEAR = 60.5;          // Estimated - needs measurment
-        public static final double SHOOTER_VELOCITY_FAR = 73;           // ditto
-        public static final double MIN_SHOOTER_SPEED = 55;
-        public static final double MIN_SHOOTER_VOLTAGE = 3.0;
-        public static final double MAX_SHOOTER_VOLTAGE = 12.5;
+        public static final double SHOOTER_VOLTAGE_OUT_NEAR =  9.0;       // volts, use 9.0 for double wheel shooter
+        public static final double SHOOTER_VOLTAGE_OUT_FAR  = 11.5;
+        public static final double SHOOTER_VELOCITY_NEAR    = 60.5;       // Estimated - needs measurment
+        public static final double SHOOTER_VELOCITY_FAR     = 73.0;       // ditto
+        public static final double MIN_SHOOTER_SPEED        = 55.0;
+        public static final double MIN_SHOOTER_VOLTAGE      =  3.0;
+        public static final double MAX_SHOOTER_VOLTAGE      = 12.5;
 
-        public static final double AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION = 40;
+        public static final double AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION = 40.0;
 
         // Shooter Aim Motor parameters
-
         public static final int AIM_NEO550_ID = 14;
         public static final boolean INVERT_AIM_NEO550 = false;
         public static final CANSparkMax.IdleMode AIM_MOTOR_NEUTRAL_MODE = CANSparkMax.IdleMode.kBrake;
@@ -246,19 +255,19 @@ public final class NotableConstants {           // As in all these constants are
         public static final double AIM_KD = 0.0;
         public static final double AIM_KF = 0.0;
         public static final double MIN_AIM_CLOSED_LOOP_OUTPUT = -0.8;
-        public static final double MAX_AIM_CLOSED_LOOP_OUTPUT = 0.8;
+        public static final double MAX_AIM_CLOSED_LOOP_OUTPUT =  0.8;
     
-        public static final double AIM_POSITION_NEAR_SHOT = 1.0;       // Actual limit is -1.619
-        public static final double AIM_POSITION_FAR_SHOT = 45.0;       // Actual limit 47.0
-        public static final double AIM_GEAR_RATIO = 100.0;
+        public static final double AIM_POSITION_NEAR_SHOT =  1.0;       // Actual limit is -1.619
+        public static final double AIM_POSITION_FAR_SHOT  = 45.0;       // Actual limit 47.0
+        public static final double AIM_GEAR_RATIO         = 100.0;
 
-        public static final double MIN_AIM_POSITION = -1.0;       // Actual limit is -1.5
-        public static final double MAX_AIM_POSITION = 45.0;       // Actual limit 48.0
+        public static final double  MIN_AIM_POSITION = -2.0;       // Actual is -1.5, set to -2 so physical stop will always be detectable with current sensing
+        public static final double  MAX_AIM_POSITION = 45.0;       // Actual limit 48.0
+        public static final boolean AIM_MOTOR_ENABLE_SOFT_LIMITS = true;
 
-        public static final int AIM_CONT_CURRENT_LIMIT = 20;
-        public static final int AIM_PEAK_CURRENT_LIMIT = 40;
-        public static final double AIM_PEAK_CURRENT_DURATION = 0.1;
-        public static final boolean AIM_ENABLE_CURRENT_LIMIT = true;
+        public static final int  AIM_SMART_CURRENT_LIMIT     = 20;
+        public static final int  AIM_SECONDARY_CURRENT_LIMIT = 30;
+        public static final double AIM_DECTECTION_CURRENT_FOR_STOP = 18.0;
 
         public static final double ALLOWED_SHOOTER_AIM_ERROR = 2.0/360.0;           // allow 2 deg error    
     }

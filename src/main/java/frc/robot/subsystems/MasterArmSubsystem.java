@@ -35,6 +35,7 @@ import frc.lib.util.FileRecorder;
 import frc.lib.util.FileRecorder.NoteEvent;
 import frc.lib.util.FileRecorder.NoteRequest;
 import frc.robot.Constants;
+import frc.robot.Robot;
 import frc.robot.Constants.F;
 import frc.robot.NotableConstants.MAC;
 import frc.robot.commands.RumbleCmd;
@@ -72,6 +73,7 @@ public class MasterArmSubsystem extends SubsystemBase {
   private boolean m_isDistantSpeakerShot;   // flag keeps track of which speaker shot is called for
   
   private double m_avgMasterRawAbsPos;
+  private double m_temp;
 
   private double m_currentMasterArmSetpoint;
   private double m_positionError;
@@ -91,8 +93,9 @@ public class MasterArmSubsystem extends SubsystemBase {
    * all NoteHandler requests, movements, timeouts,
    * state changes and errors to a thumb drive.
    ********************************************************/
-  private static boolean DEBUG_ON = true;
-  public static boolean NOTE_LOGGING_ACTIVE = true;
+  private static boolean DEBUG_ON = false;
+  public static boolean NOTE_LOGGING_ACTIVE = false;
+  public static boolean CTRE_SIGNAL_LOGGING_ACTIVE = false;
 
   public FileRecorder m_fileRecorder = new FileRecorder("NoteData", NOTE_LOGGING_ACTIVE);
   public InnerArmSubsystem m_innerArmSubsystem = new InnerArmSubsystem(()-> getCurrentStateName(),
@@ -131,6 +134,10 @@ public class MasterArmSubsystem extends SubsystemBase {
    * Constructor for a new MasterArmSubsystem. 
    ******************************************************/
   public MasterArmSubsystem() {
+    if (CTRE_SIGNAL_LOGGING_ACTIVE) {
+      Robot.startCtreSignalLogger();
+    }
+
     configAbsMasterArmCANCoder();
     configMasterArmMotor();
   //  m_intakeSubsystem.setDefaultCommand(DefaultIntakeCmd(m_intakeSubsystem, ()->RobotContainer.getHidXboxCtrl().getLeftY()));
@@ -142,7 +149,7 @@ public class MasterArmSubsystem extends SubsystemBase {
     m_isSafeToReturn = false;
     setupMasterArmPublishing();
     // init the variable holding the avg raw arm position
-    m_avgMasterRawAbsPos = getAbsMasterArmPos() - MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET;
+    m_avgMasterRawAbsPos = getRawMasterArmPos();
     gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);
   }
 
@@ -405,6 +412,16 @@ public class MasterArmSubsystem extends SubsystemBase {
     }
   }
 
+  // Called from RobotContainer on ALT+Start button press
+  public void closeRecording() {
+    if (NOTE_LOGGING_ACTIVE) {
+      m_fileRecorder.closeFileRecorder();
+    }
+    if (Robot.isCtreSignalLoggerActive()) {
+      Robot.stopCtreSignalLogger();
+    }
+  }
+
   /*********************************************
    * Status utilities to assist with Autonomous 
    *********************************************/
@@ -460,10 +477,10 @@ public class MasterArmSubsystem extends SubsystemBase {
    * and sharing the SW LimitSwitch check.
    ************************************************************************/
   public double limitMasterArmPos(double position) {
-    if (position > MAC.MAX_MASTER_ARM_ROTATIONS) {
-      return MAC.MAX_MASTER_ARM_ROTATIONS;
-    } else if (position < MAC.MIN_MASTER_ARM_ROTATIONS) {
-      return MAC.MIN_MASTER_ARM_ROTATIONS;
+    if (position > MAC.MAX_MASTER_ARM_SOFT_LIMIT) {
+      return MAC.MAX_MASTER_ARM_SOFT_LIMIT;
+    } else if (position < MAC.MIN_MASTER_ARM_SOFT_LIMIT) {
+      return MAC.MIN_MASTER_ARM_SOFT_LIMIT;
     } else {
       return position;
     }
@@ -558,11 +575,21 @@ public class MasterArmSubsystem extends SubsystemBase {
     }
   }
 
+  // This method returns the uncorrected CANcoder Absolute position. The valid range of one
+  // revolution is -.5 to + .5, so translate to baseband if needed.
+  public double getRawMasterArmPos() {
+    m_temp = getAbsMasterArmPos() - MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET;
+    if (Math.abs(m_temp) > .5) {
+      m_temp = m_temp - Math.copySign(1.0, m_temp);
+    } 
+    return m_temp;
+  }
+
   /*******************************************************************
    * Setup and Config routines
    ******************************************************************/
   private void configMasterArmMotor() {
-    var closedLoopConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(0)
+    var closedLoopConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(MAC.MASTER_ARM_CLOSED_LOOP_RAMP_PERIOD)
                                                        .withVoltageClosedLoopRampPeriod(MAC.MASTER_ARM_CLOSED_LOOP_RAMP_PERIOD)
                                                        .withTorqueClosedLoopRampPeriod(0);
     var feedbackConfig = new FeedbackConfigs().withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
@@ -576,11 +603,13 @@ public class MasterArmSubsystem extends SubsystemBase {
     var currentLimitConfig = new CurrentLimitsConfigs().withSupplyCurrentLimit(MAC.MASTER_ARM_CONT_CURRENT_LIMIT)
                                                        .withSupplyCurrentThreshold(MAC.MASTER_ARM_PEAK_CURRENT_LIMIT)
                                                        .withSupplyTimeThreshold(MAC.MASTER_ARM_PEAK_CURRENT_DURATION)
-                                                       .withSupplyCurrentLimitEnable(MAC.MASTER_ARM_ENABLE_CURRENT_LIMIT);
-    var swLimitConfig = new SoftwareLimitSwitchConfigs().withForwardSoftLimitEnable(true)
-                                                        .withForwardSoftLimitThreshold(MAC.MAX_MASTER_ARM_ROTATIONS)
-                                                        .withReverseSoftLimitEnable(true)
-                                                        .withReverseSoftLimitThreshold(MAC.MIN_MASTER_ARM_ROTATIONS);
+                                                       .withSupplyCurrentLimitEnable(MAC.MASTER_ARM_ENABLE_CURRENT_LIMIT)
+                                                       .withStatorCurrentLimit(MAC.MASTER_ARM_STATOR_CURRENT_LIMIT)
+                                                       .withStatorCurrentLimitEnable(MAC.MASTER_ARM_ENABLE_STATOR_CURRENT_LIMIT);
+    var swLimitConfig = new SoftwareLimitSwitchConfigs().withForwardSoftLimitEnable(MAC.ENABLE_MASTER_ARM_SOFT_LIMITS)
+                                                        .withForwardSoftLimitThreshold(MAC.MAX_MASTER_ARM_SOFT_LIMIT)
+                                                        .withReverseSoftLimitEnable(MAC.ENABLE_MASTER_ARM_SOFT_LIMITS)
+                                                        .withReverseSoftLimitThreshold(MAC.MIN_MASTER_ARM_SOFT_LIMIT);
     Slot0Configs pid0Config = new Slot0Configs().withKP(MAC.MASTER_ARM_KP)
                                                 .withKI(MAC.MASTER_ARM_KI)
                                                 .withKD(MAC.MASTER_ARM_KD)
@@ -668,7 +697,7 @@ public class MasterArmSubsystem extends SubsystemBase {
     // Shuffleboard is notoriously fickle with programatically generated tabs,
     // sometimes it stops the live data updates.
     // Post any critical data to SmartDashboard Tab in parallel
-    m_avgMasterRawAbsPos = ((m_avgMasterRawAbsPos * .95) + ((getAbsMasterArmPos()-MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET) * .05));
+    m_avgMasterRawAbsPos = ((m_avgMasterRawAbsPos * .95) + (getRawMasterArmPos() * .05));
     SmartDashboard.putNumber("MasterAvgRawAbsPos ", m_avgMasterRawAbsPos);
     SmartDashboard.putNumber("MasterCorrAbsPos ", getAbsMasterArmPos());
   } 

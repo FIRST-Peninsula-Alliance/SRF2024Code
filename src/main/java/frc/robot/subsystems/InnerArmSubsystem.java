@@ -17,6 +17,7 @@ import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -45,6 +46,7 @@ public class InnerArmSubsystem extends SubsystemBase {
   private double m_innerArmSetpoint;
   private double m_avgInnerRawAbsPos;
   private double m_magnetOffset = IAC.INNER_ARM_CANCODER_MAGNET_OFFSET;
+  private double m_temp;
   private int m_count = 0;
   private boolean m_isDistantSpeakerShot = false;
 
@@ -88,10 +90,10 @@ public class InnerArmSubsystem extends SubsystemBase {
    * Utilities for slightly adjusting position of innerArm (assumed static)
    ************************************************************************/
   public double limitInnerArmPosition(double position) {
-    if (position > IAC.MAX_INNER_ARM_LIMIT) {
-      return(IAC.MAX_INNER_ARM_LIMIT);
-    } else if (position < IAC.MIN_INNER_ARM_LIMIT) {
-      return IAC.MIN_INNER_ARM_LIMIT;
+    if (position > IAC.MAX_INNER_ARM_SOFT_LIMIT) {
+      return(IAC.MAX_INNER_ARM_SOFT_LIMIT);
+    } else if (position < IAC.MIN_INNER_ARM_SOFT_LIMIT) {
+      return IAC.MIN_INNER_ARM_SOFT_LIMIT;
     } else {
       return position;
     }
@@ -212,11 +214,11 @@ public class InnerArmSubsystem extends SubsystemBase {
   }
 
   public void gotoVerticalUpPos() {
-    if (getAbsInnerArmPos() > IAC.VERTICAL_UP_POS) {
-      m_innerArmSetpoint = IAC.VERTICAL_UP_POS * IAC.INNER_ARM_CANCODER_TO_AXLE_RATIO;
-    } else {
+    //if (getAbsInnerArmPos() > IAC.VERTICAL_UP_POS) {
+    //  m_innerArmSetpoint = IAC.VERTICAL_UP_POS * IAC.INNER_ARM_CANCODER_TO_AXLE_RATIO;
+    //} else {
       m_innerArmSetpoint = IAC.VERTICAL_UP_POS;
-    }
+    //}
     gotoPosition(m_innerArmSetpoint);
   }
   
@@ -257,7 +259,7 @@ public class InnerArmSubsystem extends SubsystemBase {
    * Configure Hardware methods 
    ****************************************/
   private void configInnerArmMotor() {
-    var closedLoopConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(0)
+    var closedLoopConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(IAC.INNER_ARM_CLOSED_LOOP_RAMP_PERIOD)
                                                         .withVoltageClosedLoopRampPeriod(IAC.INNER_ARM_CLOSED_LOOP_RAMP_PERIOD)
                                                         .withTorqueClosedLoopRampPeriod(0);
     var feedbackConfig = new FeedbackConfigs().withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
@@ -268,27 +270,34 @@ public class InnerArmSubsystem extends SubsystemBase {
                                                     .withInverted(IAC.INNER_ARM_MOTOR_INVERT)
                                                     .withPeakForwardDutyCycle(IAC.INNER_ARM_OUTPUT_LIMIT_FACTOR)
                                                     .withPeakReverseDutyCycle(-IAC.INNER_ARM_OUTPUT_LIMIT_FACTOR);
-                                                    //.withDutyCycleNeutralDeadband(.001);
     var currentLimitConfig = new CurrentLimitsConfigs().withSupplyCurrentLimit(IAC.INNER_ARM_CONT_CURRENT_LIMIT)
                                                        .withSupplyCurrentThreshold(IAC.INNER_ARM_PEAK_CURRENT_LIMIT)
                                                        .withSupplyTimeThreshold(IAC.INNER_ARM_PEAK_CURRENT_DURATION)
-                                                       .withSupplyCurrentLimitEnable(IAC.INNER_ARM_ENABLE_CURRENT_LIMIT);
+                                                       .withSupplyCurrentLimitEnable(IAC.INNER_ARM_ENABLE_CURRENT_LIMIT)
+                                                       .withStatorCurrentLimit(IAC.INNER_ARM_STATOR_CURRENT_LIMIT)
+                                                       .withStatorCurrentLimitEnable(IAC.INNER_ARM_ENABLE_STATOR_CURRENT_LIMIT);
+    var softwareLimitSwitchConfig = new SoftwareLimitSwitchConfigs().withForwardSoftLimitThreshold(IAC.MAX_INNER_ARM_SOFT_LIMIT)
+                                                                    .withForwardSoftLimitEnable(IAC.ENABLE_INNER_ARM_SOFT_LIMITS)
+                                                                    .withReverseSoftLimitThreshold(IAC.MIN_INNER_ARM_SOFT_LIMIT)
+                                                                    .withReverseSoftLimitEnable(IAC.ENABLE_INNER_ARM_SOFT_LIMITS);
     Slot0Configs pid0Config = new Slot0Configs().withKP(IAC.INNER_ARM_KP)
                                                 .withKI(IAC.INNER_ARM_KI)
                                                 .withKD(IAC.INNER_ARM_KD)
                                                 .withKS(IAC.INNER_ARM_KS)
                                                 .withKV(IAC.INNER_ARM_KV)
                                                 .withKA(IAC.INNER_ARM_KA)
-                                                .withKG(IAC.INNER_ARM_KG).withGravityType(GravityTypeValue.Arm_Cosine);
+                                                .withKG(IAC.INNER_ARM_KG)
+                                                .withGravityType(GravityTypeValue.Arm_Cosine);
     MotionMagicConfigs  motionMagicConfig = new MotionMagicConfigs().withMotionMagicCruiseVelocity(IAC.INNER_ARM_MOTION_MAGIC_VEL)
                                                                     .withMotionMagicAcceleration(IAC.INNER_ARM_MOTION_MAGIC_ACCEL)
                                                                     .withMotionMagicJerk(IAC.INNER_ARM_MOTION_MAGIC_JERK)
                                                                     .withMotionMagicExpo_kA(IAC.INNER_ARM_MOTION_MAGIC_kA)
-                                                                    .withMotionMagicExpo_kA(IAC.INNER_ARM_MOTION_MAGIC_kV);
+                                                                    .withMotionMagicExpo_kV(IAC.INNER_ARM_MOTION_MAGIC_kV);
     var innerArmConfig = new TalonFXConfiguration().withFeedback(feedbackConfig)
                                                    .withMotorOutput(motorOutputConfig)
                                                    .withCurrentLimits(currentLimitConfig)
                                                    .withClosedLoopRamps(closedLoopConfig)
+                                                   .withSoftwareLimitSwitch(softwareLimitSwitchConfig)
                                                    .withSlot0(pid0Config)
                                                    .withMotionMagic(motionMagicConfig);
     StatusCode status = m_innerArmMotor.getConfigurator().apply(innerArmConfig);
@@ -309,9 +318,14 @@ public class InnerArmSubsystem extends SubsystemBase {
     }
   }
 
-  // This method returns the uncorrected CANcoder Absolute position.
+  // This method returns the uncorrected CANcoder Absolute position. The valid range of one
+  // revolution is -.5 to + .5, so translate to baseband if needed.
   public double getRawInnerArmPos() {
-    return (getAbsInnerArmPos()-m_magnetOffset);
+    m_temp = getAbsInnerArmPos() - m_magnetOffset;
+    if (Math.abs(m_temp) > .5) {
+      m_temp = m_temp - Math.copySign(1.0, m_temp);
+    } 
+    return m_temp;
   }
 
   /*************************************

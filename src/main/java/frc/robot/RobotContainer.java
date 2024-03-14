@@ -97,7 +97,7 @@ public class RobotContainer {
         //    a                     => Prep for scoring in Amplifier
         //    RightTrigger          => Shoot (score) when all checks are satisfied. 
         //                             The last a or y button determines which goal. 
-        //    ALT + RightTrigger    => Eject note as sson as possible, ensure ejection outside robot
+        //    ALT + RightTrigger    => Discard note as soon as possible, ensure ejection outside robot
         //    x                     => Park (crossed wheel angles)
         //    ALT + x               => Cancel any Note handling action in progress. Retract arm(s) if out.
         //    L Joystick Y          => Swerve Translate (move fore/aft)
@@ -110,11 +110,7 @@ public class RobotContainer {
         //    R Joystick Button     => Set Robot Oriented drive
         //    Back                  => Zero the Gyro
         //    Start                 => Single step through Note states if in debug mode
-        //    ALT + Start           => Reset Inner Arm CANcoder Magnet Offset (lasts only 
-        //                              until power cycle, or new code deployment).
-        //                              Use ONLY with calibration stick in place,
-        //                              and both Arms horizontal. Edit new offset into
-        //                              NotableConstants.java if happy with it.
+        //    ALT + Start           => Close Note Handler file logging.
         //    ALT + Back            => Simulate "end of match" period
         //    Left Trigger          => Simulate note acquired
         //    ALT + POV_UP          => extend elevator @ fixed speed when held (can get slower speed with Right Bumper)
@@ -158,6 +154,7 @@ public class RobotContainer {
         m_xbox.rightTrigger(0.5).and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.scoreNote()));
         ALT.and(m_xbox.rightTrigger(0.5)).onTrue(new InstantCommand(()->m_masterArmSubsystem.discardNote()));
         m_xbox.start().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.stepPastDebugHold()));
+        ALT.and(m_xbox.start()).onTrue(new InstantCommand(()->m_masterArmSubsystem.closeRecording()));
         m_xbox.leftTrigger().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.simulateNoteAcquired()));
     
         // Utilities for fine tuning various arm positions, can be used in extremis

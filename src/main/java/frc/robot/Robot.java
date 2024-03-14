@@ -5,7 +5,7 @@
 package frc.robot;
 
 
-//import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 
@@ -23,6 +23,7 @@ public class Robot extends TimedRobot {
 
   private RobotContainer m_robotContainer;
   
+  private static boolean m_ctreLoggerActive = false;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -32,10 +33,27 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+  }
+
+  public static void startCtreSignalLogger() {
     // Start CTRE Logger with the default path - which is the first USB Flash 
     // drive found. Be sure to install a thumb drive in a RoboRio USB port
-    // SignalLogger.setPath("/media/sda1/");
-    // SignalLogger.start();
+    if (! m_ctreLoggerActive) {
+      m_ctreLoggerActive = true;
+      SignalLogger.setPath("/media/sda1/");
+      SignalLogger.start();
+    }
+  }
+
+  public static void stopCtreSignalLogger() {
+    if (m_ctreLoggerActive) {
+      m_ctreLoggerActive = false;
+      SignalLogger.stop();
+    }
+  }
+
+  public static boolean isCtreSignalLoggerActive() {
+    return m_ctreLoggerActive;
   }
 
   /**

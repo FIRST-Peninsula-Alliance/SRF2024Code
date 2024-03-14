@@ -53,14 +53,20 @@ public class FileRecorder {
 
     public FileRecorder(String filename, boolean isFileRecorderActive) {
         m_pathName = "/U/"+filename+".txt";
-        NOTE_LOGGING_ACTIVE = isFileRecorderActive;
-        try {
-            m_fileWriter = new FileWriter(m_pathName, false);   // Overwrite existing file
-            m_bufferedWriter = new BufferedWriter(m_fileWriter);
-        } catch (IOException e) {
+        if (isFileRecorderActive) {
+            try {
+                m_fileWriter = new FileWriter(m_pathName, false);   // Overwrite existing file
+                m_bufferedWriter = new BufferedWriter(m_fileWriter);
+            } catch (IOException e) {
+                m_bufferedWriter = null;
+                m_fileWriter = null;
+                isFileRecorderActive = false;
+            }
+        } else {
             m_bufferedWriter = null;
             m_fileWriter = null;
         }
+        NOTE_LOGGING_ACTIVE = isFileRecorderActive;
     }
      
     public static boolean isFileRecorderAvail() {
@@ -75,7 +81,7 @@ public class FileRecorder {
                                 long elapsedTime,
                                 String state,
                                 int seqNo) {
-        if (m_fileWriter != null) {
+        if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write( caller+" Move: "+
                                         eventType.toString()+", "+
@@ -98,7 +104,7 @@ public class FileRecorder {
                                long startTimeMillis,
                                String state,
                                int seqNo) {
-        if (m_fileWriter != null) {
+        if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write(caller+", "+
                                        requestType.toString()+", "+
@@ -117,7 +123,7 @@ public class FileRecorder {
                                   long startTimeMillis,
                                   String state,
                                   int seqNo) {
-        if (m_fileWriter != null) {
+        if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write(requestType.toString()+", "+
                                        F.df80.format(startTimeMillis)+", "+
@@ -137,7 +143,7 @@ public class FileRecorder {
                                     double aimSetpoint,
                                     String currentState,
                                     int currentSeqNo) {
-        if (m_fileWriter != null) {
+        if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write(requestType.toString()+", "+
                                        F.df80.format(startTimeMillis)+", "+
@@ -157,7 +163,7 @@ public class FileRecorder {
                                   String oldState,
                                   String newState,
                                   int currentSeqNo) {
-        if (m_fileWriter != null) {
+        if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write( NoteEvent.STATE_CHANGE.toString()+", "+
                                         F.df80.format(relTimeMillis)+", "+
@@ -175,7 +181,7 @@ public class FileRecorder {
                                   String State,
                                   int oldSeqNo,
                                   int newSeqNo) {
-        if (m_fileWriter != null) {
+        if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write( NoteEvent.SEQ_NO_CHANGE.toString()+","+
                                         F.df80.format(relTimeMillis)+", "+
@@ -189,13 +195,16 @@ public class FileRecorder {
     }
 
     public void closeFileRecorder() {
-        try {
-            m_bufferedWriter.flush();
-            m_bufferedWriter.close();
-        } catch (Exception e) {
-            // Ignore any exception - closing file anyway.
+        if (NOTE_LOGGING_ACTIVE) {
+            try {
+                m_bufferedWriter.flush();
+                m_bufferedWriter.close();
+            } catch (Exception e) {
+                // Ignore any exception - closing file anyway.
+            }
         }
         m_bufferedWriter = null;
         m_fileWriter = null;
+        NOTE_LOGGING_ACTIVE = false;
     }
 }

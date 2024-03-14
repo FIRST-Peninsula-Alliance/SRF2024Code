@@ -254,7 +254,8 @@ public class SwerveModule {
         // Configure to send motor encoder position data frequently, but everything
         // else at a lower rate, to minimize can bus traffic.
         //reportRevError(CANSparkMaxUtil.setCANSparkMaxBusUsage(m_steerMotor, Usage.kPositionOnly));
-        reportRevError(m_steerMotor.setSmartCurrentLimit(SDC.STEER_CONT_CURRENT_LIMIT));
+        reportRevError(m_steerMotor.setSmartCurrentLimit(SDC.STEER_SMART_CURRENT_LIMIT));
+        reportRevError(m_steerMotor.setSecondaryCurrentLimit(SDC.STEER_SECONDARY_CURRENT_LIMIT));
         // setInverted returns void
         m_steerMotor.setInverted(SDC.STEER_MOTOR_INVERT);
         reportRevError(m_steerMotor.setIdleMode(SDC.STEER_MOTOR_NEUTRAL_MODE));
@@ -309,10 +310,12 @@ public class SwerveModule {
                                                         .withPeakReverseDutyCycle(-SDC.OUTPUT_DRIVE_LIMIT_FACTOR);
                                                         //.withDutyCycleNeutralDeadband(.001);
         CurrentLimitsConfigs currentLimitConfig = new CurrentLimitsConfigs()
-                                                        .withSupplyCurrentLimit(SDC.DRIVE_CONT_CURRENT_LIMIT)
-                                                        .withSupplyCurrentThreshold(SDC.DRIVE_PEAK_CURRENT_LIMIT)
-                                                        .withSupplyTimeThreshold(SDC.DRIVE_PEAK_CURRENT_DURATION)
-                                                        .withSupplyCurrentLimitEnable(SDC.DRIVE_ENABLE_CURRENT_LIMIT);
+                                                        .withSupplyCurrentLimit(SDC.DRIVE_SUPPLY_CURRENT_LIMIT)
+                                                        .withSupplyCurrentThreshold(SDC.DRIVE_SUPPLY_CURRENT_THRESHOLD)
+                                                        .withSupplyTimeThreshold(SDC.DRIVE_SUPPLY_CURRENT_TIME_THRESHOLD)
+                                                        .withSupplyCurrentLimitEnable(SDC.DRIVE_ENABLE_SUPPLY_CURRENT_LIMIT)
+                                                        .withStatorCurrentLimit(SDC.DRIVE_STATOR_CURRENT_LIMIT)
+                                                        .withStatorCurrentLimitEnable(SDC.DRIVE_ENABLE_STATOR_CURRENT_LIMIT );
         Slot0Configs pid0Configs = new Slot0Configs().withKP(SDC.DRIVE_KP)
                                                      .withKI(SDC.DRIVE_KI)
                                                      .withKD(SDC.DRIVE_KD)
