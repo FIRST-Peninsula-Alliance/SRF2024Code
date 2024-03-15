@@ -413,6 +413,8 @@ public final class Constants {
         public static final double KP_X_CONTROLLER = .5;     // was 1;        // TODO: was 2
         public static final double KP_Y_CONTROLLER = .5;        // 1;          // was 1
         public static final double KP_THETA_CONTROLLER = .76;       //1.6;        //was 1.6
+
+        public static final double AUTO_WAYPOINT_MULTIPLIER = 0.25;
     
         /* Constraint for the motion profiled robot angle controller */
         public static final TrapezoidProfile.Constraints K_THETA_CONTROLLER_CONSTRAINTS =

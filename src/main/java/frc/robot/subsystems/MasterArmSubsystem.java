@@ -925,12 +925,12 @@ public class MasterArmSubsystem extends SubsystemBase {
         };
         break;
 
-      case 10:
+      case 20:
         m_intakeSubsystem.ejectNote();
-        changeSeqNoTo(11);
+        changeSeqNoTo(21);
         break;
 
-      case 11:
+      case 21:
         if (m_intakeSubsystem.isIntakeIdle()) {
           // Eject is complete, so fire up the intake again, stay in WAIT_FOR_NOTE state,
           // got back to SeqNo 1 

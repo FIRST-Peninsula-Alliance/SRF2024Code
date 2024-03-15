@@ -1,12 +1,8 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.autos;
 
+import frc.robot.subsystems.MasterArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.Constants.*;
-
 import java.util.List;
 
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -18,26 +14,20 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
-public class JustExitCmd extends SequentialCommandGroup {
-  private double autoM = AutoC.AUTO_WAYPOINT_MULTIPLIER;
-  private SwerveSubsystem m_swerveDrive;
-   private enum AutoStartAngle {
-        AmpSide_60,
-        SourceSide_60,
-        StraightOn
-      }
-    public AutoStartAngle m_AutoStartAngle;
+public class Score2NotesAuto extends SequentialCommandGroup {
 
-    public void publishAutoStartAngleData () {
-    SmartDashboard.putString("AutoStartAngle ", m_AutoStartAngle.toString());
-  }
+private double autoM = AutoC.AUTO_WAYPOINT_MULTIPLIER;
+
+  private MasterArmSubsystem m_noteConductor;
+  private SwerveSubsystem m_swerveDrive;
 
   /** Creates a new ScoreAndMove. */
-  public JustExitCmd(SwerveSubsystem swerveDrive) {
+  public Score2NotesAuto(MasterArmSubsystem noteConductor, 
+                         SwerveSubsystem swerveDrive) {
+    m_noteConductor = noteConductor;
     m_swerveDrive = swerveDrive;
     
     TrajectoryConfig configExit =
@@ -49,29 +39,26 @@ public class JustExitCmd extends SequentialCommandGroup {
                 // .addConstraint(AutoConstants.autoVoltageConstraint);
         configExit.setReversed(false);
 
-        // An example trajectory to follow, one path.  All units in meters. 
+        // A trajectory to follow.  All units in meters.
 
-    Trajectory exitTrajectory =
+    Trajectory moveTrajectory =
         TrajectoryGenerator.generateTrajectory(
-            // Start at the origin facing the -X direction, away from the
+            // Start at the origin facing the X direction, away from the
             // speaker goal. Position bumpers up against the subwoofer 
             // front, even if offset to one side (i.e. no angle shot with
             // this auto). Because the subwoofer extends ~1 m into the field,
             // the origin X is not really 0, but for now, consider it good.
             // On first test, a 2 m move resulted in closer to 8 m of movement. 
             // Need better tuning for the trajectory PIDs, but for now, set distance to
-            // just .5 m, expecting about 2 m result, which should clear the zone.
+            // just ..886 m, expecting about 1.5 m result, which should approach the 
+            // staged note on the field
 
             new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-            List.of(new Translation2d(0.183*autoM, 0*autoM),
-            new Translation2d(0.404*autoM, 0*autoM),
-            new Translation2d(0.636*autoM, 0*autoM),
-            new Translation2d(0.783*autoM, 0*autoM),
-            
-            new Translation2d(0.886*autoM, 0*autoM)),
-            new Pose2d(0.886, 0.0, new Rotation2d(0.0)), //allowed range is pi/2 to -pi/2
+            List.of(new Translation2d(0.404*autoM, 0*autoM),
+                    new Translation2d(0.636*autoM, 0*autoM),
+                   ),
+            new Pose2d(0.886*autoM, 0.0, new Rotation2d(0.0)),
             configExit);
-            m_AutoStartAngle = AutoStartAngle.AmpSide_60;
 
       ProfiledPIDController thetaController =
           new ProfiledPIDController(AutoC.KP_THETA_CONTROLLER,
@@ -82,7 +69,7 @@ public class JustExitCmd extends SequentialCommandGroup {
 
       SwerveControllerCommand swerveControllerCmd =
           new SwerveControllerCommand(
-              exitTrajectory,
+              moveTrajectory,
               m_swerveDrive::getPose,
               SDC.SWERVE_KINEMATICS,
               new PIDController(AutoC.KP_X_CONTROLLER, 0, 0),
@@ -92,12 +79,15 @@ public class JustExitCmd extends SequentialCommandGroup {
               m_swerveDrive);
 
       addCommands(
-            new InstantCommand(() -> m_swerveDrive.resetOdometry(exitTrajectory.getInitialPose())),
+            new ScoreIndexedSpeakerCmd(m_noteConductor),
+            new InstantCommand(() -> m_noteConductor.acquireNote()),
+            new JustExitCmd(m_swerveDrive),
+            // new FinalScoot(m_swerveDrive),
+            new ScoreDistantSpeakerCmd(m_noteConductor),
+            new InstantCommand(() -> m_swerveDrive.resetOdometry(moveTrajectory.getInitialPose())),
             swerveControllerCmd,
             new InstantCommand(()-> m_swerveDrive.stop())
             );
     }
-
-   
-    
 }
+

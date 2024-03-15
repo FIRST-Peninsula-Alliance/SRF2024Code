@@ -4,26 +4,27 @@
 
 package frc.robot.autos;
 
-import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.Constants.*;
-
 import java.util.List;
 
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.proto.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
-import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
-public class JustExitCmd extends SequentialCommandGroup {
-  private double autoM = AutoC.AUTO_WAYPOINT_MULTIPLIER;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
+import frc.robot.Constants.AutoC;
+import frc.robot.Constants.SDC;
+import frc.robot.subsystems.SwerveSubsystem;
+
+public class FinalScoot extends SequentialCommandGroup {
+   private double autoM = AutoC.AUTO_WAYPOINT_MULTIPLIER;
   private SwerveSubsystem m_swerveDrive;
    private enum AutoStartAngle {
         AmpSide_60,
@@ -36,8 +37,8 @@ public class JustExitCmd extends SequentialCommandGroup {
     SmartDashboard.putString("AutoStartAngle ", m_AutoStartAngle.toString());
   }
 
-  /** Creates a new ScoreAndMove. */
-  public JustExitCmd(SwerveSubsystem swerveDrive) {
+  /** Creates a new FinalScoot. */
+     public FinalScoot(SwerveSubsystem swerveDrive) {
     m_swerveDrive = swerveDrive;
     
     TrajectoryConfig configExit =
@@ -62,14 +63,10 @@ public class JustExitCmd extends SequentialCommandGroup {
             // Need better tuning for the trajectory PIDs, but for now, set distance to
             // just .5 m, expecting about 2 m result, which should clear the zone.
 
-            new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-            List.of(new Translation2d(0.183*autoM, 0*autoM),
-            new Translation2d(0.404*autoM, 0*autoM),
-            new Translation2d(0.636*autoM, 0*autoM),
-            new Translation2d(0.783*autoM, 0*autoM),
-            
-            new Translation2d(0.886*autoM, 0*autoM)),
-            new Pose2d(0.886, 0.0, new Rotation2d(0.0)), //allowed range is pi/2 to -pi/2
+            new Pose2d(0.886, 0.0, new Rotation2d(0.0)),
+            List.of(
+            new Translation2d(1.241*autoM, 0*autoM)),
+            new Pose2d(1.241, 0.0, new Rotation2d(0.0)), //allowed range is pi/2 to -pi/2
             configExit);
             m_AutoStartAngle = AutoStartAngle.AmpSide_60;
 
@@ -97,7 +94,7 @@ public class JustExitCmd extends SequentialCommandGroup {
             new InstantCommand(()-> m_swerveDrive.stop())
             );
     }
+  }
 
-   
-    
-}
+  
+  

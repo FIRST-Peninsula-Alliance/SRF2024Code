@@ -59,6 +59,7 @@ public class RobotContainer {
         ScoreAndExitAuto m_scoreAndExitAuto = new ScoreAndExitAuto(m_masterArmSubsystem,
                                                                    m_swerveSubsystem);
         JustExitCmd m_justExitAuto = new JustExitCmd(m_swerveSubsystem);
+        Score2NotesAuto m_score2NotesAuto = new Score2NotesAuto(m_masterArmSubsystem, m_swerveSubsystem);
         ScoreIndexedSpeakerCmd m_justScoreAuto = new ScoreIndexedSpeakerCmd(m_masterArmSubsystem);
         // TestSquareAuto m_testSquareAuto = new TestSquareAuto(m_swerveSubsystem);
      
@@ -66,6 +67,8 @@ public class RobotContainer {
         m_chooser.addOption("Do Nothing", m_doNothingAuto);
         m_chooser.addOption("Just Score", m_justScoreAuto);
         m_chooser.addOption("Just Exit", m_justExitAuto);
+        m_chooser.addOption("Score 2 Notes", m_score2NotesAuto);
+        
         //m_chooser.addOption("Auto Square patterns", m_testSquareAuto);
         SmartDashboard.putData("Autonomous Selection: ", m_chooser);
 
