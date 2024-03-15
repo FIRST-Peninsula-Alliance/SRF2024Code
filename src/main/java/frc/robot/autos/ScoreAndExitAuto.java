@@ -4,6 +4,7 @@
 
 package frc.robot.autos;
 
+import frc.robot.commands.ScoreIndexedSpeakerCmd;
 import frc.robot.subsystems.MasterArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 

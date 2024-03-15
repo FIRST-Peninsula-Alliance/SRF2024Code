@@ -18,28 +18,16 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
 public class JustExitCmd extends SequentialCommandGroup {
-  private double autoM = AutoC.AUTO_WAYPOINT_MULTIPLIER;
   private SwerveSubsystem m_swerveDrive;
-   private enum AutoStartAngle {
-        AmpSide_60,
-        SourceSide_60,
-        StraightOn
-      }
-    public AutoStartAngle m_AutoStartAngle;
-
-    public void publishAutoStartAngleData () {
-    SmartDashboard.putString("AutoStartAngle ", m_AutoStartAngle.toString());
-  }
 
   /** Creates a new ScoreAndMove. */
   public JustExitCmd(SwerveSubsystem swerveDrive) {
     m_swerveDrive = swerveDrive;
-    
+
     TrajectoryConfig configExit =
             new TrajectoryConfig(AutoC.AUTO_MAX_SPEED_M_PER_SEC *
                                     AutoC.AUTO_SPEED_FACTOR_GENERIC,
@@ -49,7 +37,7 @@ public class JustExitCmd extends SequentialCommandGroup {
                 // .addConstraint(AutoConstants.autoVoltageConstraint);
         configExit.setReversed(false);
 
-        // An example trajectory to follow, one path.  All units in meters. 
+        // An example trajectory to follow, one path.  All units in meters.
 
     Trajectory exitTrajectory =
         TrajectoryGenerator.generateTrajectory(
@@ -63,15 +51,13 @@ public class JustExitCmd extends SequentialCommandGroup {
             // just .5 m, expecting about 2 m result, which should clear the zone.
 
             new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-            List.of(new Translation2d(0.183*autoM, 0*autoM),
-            new Translation2d(0.404*autoM, 0*autoM),
-            new Translation2d(0.636*autoM, 0*autoM),
-            new Translation2d(0.783*autoM, 0*autoM),
-            
-            new Translation2d(0.886*autoM, 0*autoM)),
-            new Pose2d(0.886, 0.0, new Rotation2d(0.0)), //allowed range is pi/2 to -pi/2
+            List.of(new Translation2d(0.125, 0.0),
+                    new Translation2d(0.25, 0.0),
+                    new Translation2d(0.5, 0.0),
+                    new Translation2d(0.75, 0.0),
+                    new Translation2d(0.875, 0.0)),
+            new Pose2d(1.00, 0.0, new Rotation2d(0.0)),
             configExit);
-            m_AutoStartAngle = AutoStartAngle.AmpSide_60;
 
       ProfiledPIDController thetaController =
           new ProfiledPIDController(AutoC.KP_THETA_CONTROLLER,
@@ -97,7 +83,4 @@ public class JustExitCmd extends SequentialCommandGroup {
             new InstantCommand(()-> m_swerveDrive.stop())
             );
     }
-
-   
-    
 }

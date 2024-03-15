@@ -30,6 +30,12 @@ public class RobotContainer {
     private final SwerveParkCmd     m_parkCmd;
 
     // Create SmartDashboard chooser for autonomous routines
+    private DoNothingCmd m_doNothingAuto;
+    private ScoreAndExitAuto m_scoreAndExitAuto;
+    private JustExitCmd m_justExitAuto;
+    // private Score2NotesAuto m_score2NotesAuto;
+    private ScoreIndexedSpeakerCmd m_justScoreAuto;
+    // private TestSquareAuto m_testSquareAuto;
     private final SendableChooser<Command> m_chooser = new SendableChooser<>();
 
     // Xbox Controllers
@@ -44,31 +50,31 @@ public class RobotContainer {
         m_climbSubsystem = new ClimbSubsystem();
 
         m_swerveSubsystem.setDefaultCommand(
-                new DefaultDriveCmd(
-                    m_swerveSubsystem, 
-                    () -> -m_xbox.getLeftY(),            // translate: + fore / - back
-                    () -> -m_xbox.getLeftX(),            // strafe: + left / - right
-                    () -> -m_xbox.getRightX()));         // rotate
+                new DefaultDriveCmd(m_swerveSubsystem,
+                // Xbox stick forward and stick to left are both neg, so must negate all for WPILib expected coordinates:
+                                    () -> -m_xbox.getLeftY(),    // translate: +fore / -back
+                                    () -> -m_xbox.getLeftX(),    // strafe: +left / -right
+                                    () -> -m_xbox.getRightX())); // rotate: +CCW / -CW
 
         m_parkCmd = new SwerveParkCmd(m_swerveSubsystem,
                                       () -> -m_xbox.getLeftY(),
                                       () -> -m_xbox.getLeftX(),
                                       () -> -m_xbox.getRightX());
                     
-        DoNothingCmd m_doNothingAuto = new DoNothingCmd();
-        ScoreAndExitAuto m_scoreAndExitAuto = new ScoreAndExitAuto(m_masterArmSubsystem,
-                                                                   m_swerveSubsystem);
-        JustExitCmd m_justExitAuto = new JustExitCmd(m_swerveSubsystem);
-        Score2NotesAuto m_score2NotesAuto = new Score2NotesAuto(m_masterArmSubsystem, m_swerveSubsystem);
-        ScoreIndexedSpeakerCmd m_justScoreAuto = new ScoreIndexedSpeakerCmd(m_masterArmSubsystem);
-        // TestSquareAuto m_testSquareAuto = new TestSquareAuto(m_swerveSubsystem);
+        m_doNothingAuto = new DoNothingCmd();
+        m_scoreAndExitAuto = new ScoreAndExitAuto(m_masterArmSubsystem,
+                                                  m_swerveSubsystem);
+        m_justExitAuto = new JustExitCmd(m_swerveSubsystem);
+        m_justScoreAuto = new ScoreIndexedSpeakerCmd(m_masterArmSubsystem);
+        // m_score2NotesAuto = new Score2NotesAuto(m_masterArmSubsystem, 
+        //                                         m_swerveSubsystem);
+        // m_testSquareAuto = new TestSquareAuto(m_swerveSubsystem);
      
         m_chooser.setDefaultOption("Score, then Exit", m_scoreAndExitAuto);
         m_chooser.addOption("Do Nothing", m_doNothingAuto);
         m_chooser.addOption("Just Score", m_justScoreAuto);
         m_chooser.addOption("Just Exit", m_justExitAuto);
-        m_chooser.addOption("Score 2 Notes", m_score2NotesAuto);
-        
+        //m_chooser.addOption("Score 2 Notes", m_score2NotesAuto);
         //m_chooser.addOption("Auto Square patterns", m_testSquareAuto);
         SmartDashboard.putData("Autonomous Selection: ", m_chooser);
 
@@ -145,7 +151,7 @@ public class RobotContainer {
         ALT.and(m_xbox.rightBumper()).onTrue(new InstantCommand(()-> m_swerveSubsystem.setVarMaxOutputFactor(.2)));
         m_xbox.rightBumper().onFalse(new InstantCommand(()-> m_swerveSubsystem.setVarMaxOutputFactor(1.0)));
 
-        m_xbox.x().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.cancelNoteAction()));
+        m_xbox.x().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.discardNote()));  // was cancelNoteAction(), but that was never used
         // Swerve park 
         ALT.and(m_xbox.x()).onTrue(m_parkCmd);
         
@@ -164,39 +170,19 @@ public class RobotContainer {
         // during a match if pickup angles are not working.
         // Use povRight, povLeft, povUp and povDown for fine setpoint adjustments, 
         // about 1 degree per button press)
-        // Note: during initial develoment, setpoint control tuning uses these same buttons,
-        // so these functions can only be provided (uncommented) after that is complete:
         m_xbox.povLeft().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.adjustInnerArmSetpointUp()));
         m_xbox.povRight().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.adjustInnerArmSetpointDown()));
         m_xbox.povUp().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.adjustMasterArmSetpointUp()));
         m_xbox.povDown().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.adjustMasterArmSetpointDown()));
-    /*
-        // Otherwise, use povUp and povDown for switching between MasterArm test
-        // setpoints, and povLeft and povRight for switching between innerArm Test
-        // setpoints when control tuning, but only when in Test Mode on the 
-        // driver station. Othewise, report an error to system console.
-        m_xbox.povUp().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.gotoMASetpoint1()));
-        m_xbox.povDown().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.gotoMASetpoint2()));
-        m_xbox.povLeft().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.gotoIASetpoint1()));
-        m_xbox.povRight().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.gotoIASetpoint2()));
-    */    
-        // climb activities, normally uses pov
-        ALT.and(m_xbox.back()).onTrue(new InstantCommand(()->m_climbSubsystem.overrideEndOfMatchSafety()));
 
+        // climb activities all require ALT
+        ALT.and(m_xbox.back()).onTrue(new InstantCommand(()->m_climbSubsystem.overrideEndOfMatchSafety()));
         ALT.and(m_xbox.povUp()).onTrue(new InstantCommand(()-> m_climbSubsystem.raiseElevator()));
         ALT.and(m_xbox.povUp()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopElevator()));
         ALT.and(m_xbox.povDown()).onTrue(new InstantCommand(()-> m_climbSubsystem.lowerElevator()));
         ALT.and(m_xbox.povDown()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopElevator()));
         ALT.and(m_xbox.leftTrigger()).onTrue(new InstantCommand(()-> m_climbSubsystem.runClimbWinch()));
         ALT.and(m_xbox.leftTrigger()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopClimbWinch()));
-
-        // For testing, use pov pad for tuning shooter aim and velocity (via voltage out).
-        /*
-        ALT.and(m_xbox.povUp()).onTrue(new InstantCommand(()-> m_shooterSubsystem.changeShooterAimTest(1.0)));
-        ALT.and(m_xbox.povDown()).onTrue(new InstantCommand(()-> m_shooterSubsystem.changeShooterAimTest(-1.0)));
-        ALT.and(m_xbox.povLeft()).onTrue(new InstantCommand(()-> m_shooterSubsystem.changeShooterVoltageTest(1.0)));
-        ALT.and(m_xbox.povRight()).onTrue(new InstantCommand(()-> m_shooterSubsystem.changeShooterVoltageTest(-1.0)));
-        */
     }
 
     public Command getAutonomousCommand() {

@@ -7,6 +7,7 @@ package frc.robot.autos;
 import frc.robot.subsystems.MasterArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.Constants.*;
+import frc.robot.commands.ScoreIndexedSpeakerCmd;
 
 import java.util.List;
 

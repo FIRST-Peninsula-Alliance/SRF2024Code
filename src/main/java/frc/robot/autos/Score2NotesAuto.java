@@ -3,6 +3,9 @@ package frc.robot.autos;
 import frc.robot.subsystems.MasterArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.Constants.*;
+import frc.robot.commands.ScoreDistantSpeakerCmd;
+import frc.robot.commands.ScoreIndexedSpeakerCmd;
+
 import java.util.List;
 
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -55,7 +58,7 @@ private double autoM = AutoC.AUTO_WAYPOINT_MULTIPLIER;
 
             new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
             List.of(new Translation2d(0.404*autoM, 0*autoM),
-                    new Translation2d(0.636*autoM, 0*autoM),
+                    new Translation2d(0.636*autoM, 0*autoM)
                    ),
             new Pose2d(0.886*autoM, 0.0, new Rotation2d(0.0)),
             configExit);
