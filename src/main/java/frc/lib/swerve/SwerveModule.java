@@ -296,11 +296,9 @@ public class SwerveModule {
         var openLoopConfig = new OpenLoopRampsConfigs() .withDutyCycleOpenLoopRampPeriod(0)
                                                        .withVoltageOpenLoopRampPeriod(SDC.OPEN_LOOP_RAMP_PERIOD);
                                                        //.withTorqueOpenLoopRampPeriod(0);
-
         var closedLoopConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(0)
                                                            .withVoltageClosedLoopRampPeriod(SDC.CLOSED_LOOP_RAMP_PERIOD)
                                                            .withTorqueClosedLoopRampPeriod(0);
-
         var feedbackConfig = new FeedbackConfigs().withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
                                                   .withSensorToMechanismRatio(SDC.DRIVE_GEAR_RATIO)
                                                   .withRotorToSensorRatio(1.0);

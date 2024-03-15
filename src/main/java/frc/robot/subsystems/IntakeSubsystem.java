@@ -61,6 +61,9 @@ public class IntakeSubsystem extends SubsystemBase {
     configIntakeMotor();
   }
 
+  // All methods that require motor action set the m_intakeSpeedFactor
+  // variable to the sesired value. periodic() will poll this variable
+  // and send the appropriate control request to the motor accordingly.
   public void acquireNote() {
     m_intakeIsRunning = true;
     m_intakeSpeedFactor = IC.ACQUIRE_NOTE;
@@ -87,7 +90,6 @@ public class IntakeSubsystem extends SubsystemBase {
   public void ejectNote() {
     m_intakeIsRunning = true;
     m_intakeSpeedFactor = IC.EJECT_NOTE;
-    m_intakeMotor.setControl(m_intakeCtrl.withOutput(m_intakeBaseSpeed * m_intakeSpeedFactor));
     m_startTime = System.currentTimeMillis();
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_EJECT,

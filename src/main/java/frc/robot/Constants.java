@@ -216,7 +216,7 @@ public final class Constants {
         public static final double  DRIVE_SUPPLY_CURRENT_THRESHOLD      = 65.0;
         public static final double  DRIVE_SUPPLY_CURRENT_TIME_THRESHOLD = 0.1;
         public static final boolean DRIVE_ENABLE_SUPPLY_CURRENT_LIMIT   = true;
-        public static final double  DRIVE_STATOR_CURRENT_LIMIT          = 35.0;
+        public static final double  DRIVE_STATOR_CURRENT_LIMIT          = 40.0;   // was 35.0;
         public static final boolean DRIVE_ENABLE_STATOR_CURRENT_LIMIT   = true;
 
         // Voltage compensation not used by CTRE anymore, but is for REV NEOs
