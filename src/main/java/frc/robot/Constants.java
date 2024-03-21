@@ -212,21 +212,20 @@ public final class Constants {
         public static final int  STEER_SECONDARY_CURRENT_LIMIT = 40;
         public static final boolean STEER_ENABLE_CURRENT_LIMIT = true;
         // and Falcon/FX:
-        public static final double  DRIVE_SUPPLY_CURRENT_LIMIT          = 35.0;
-        public static final double  DRIVE_SUPPLY_CURRENT_THRESHOLD      = 65.0;
+        public static final double  DRIVE_SUPPLY_CURRENT_LIMIT          = 40.0;
+        public static final double  DRIVE_SUPPLY_CURRENT_THRESHOLD      = 0.0;
         public static final double  DRIVE_SUPPLY_CURRENT_TIME_THRESHOLD = 0.1;
         public static final boolean DRIVE_ENABLE_SUPPLY_CURRENT_LIMIT   = true;
-        public static final double  DRIVE_STATOR_CURRENT_LIMIT          = 40.0;   // was 35.0;
+        public static final double  DRIVE_STATOR_CURRENT_LIMIT          = 45.0;   // was 35.0;
         public static final boolean DRIVE_ENABLE_STATOR_CURRENT_LIMIT   = true;
 
-        // Voltage compensation not used by CTRE anymore, but is for REV NEOs
         public static final double STEER_MOTOR_VOLTAGE_COMPENSATION = 12.0;
 
         // These values are used by the drive motor to ramp in open loop.
         // Team 364 found a small open loop ramp (0.25) helps with tread wear, 
         // avoiding tipping, etc. In closed loop control, it would probably be 
         // better to employ profiled PID controllers.
-        public static final double OPEN_LOOP_RAMP_PERIOD = 1.25;    // Part of attempt to take smotor stuttering on quick starts
+        public static final double OPEN_LOOP_RAMP_PERIOD = 1.00;    // Part of attempt to take smotor stuttering on quick starts
         public static final double CLOSED_LOOP_RAMP_PERIOD = 0.0;
 
         // Drive Motor PID Values
@@ -254,8 +253,8 @@ public final class Constants {
         // (In Auto, tuning should set speeds to reasonable values, no need
         // to reduce them - in fact, just the opposite, want fastest possible
         // movements in Auto mode, consistent with safety).
-        public static final double OUTPUT_DRIVE_LIMIT_FACTOR  = 0.7;    // Part of attempt to fix motor
-        public static final double OUTPUT_ROTATE_LIMIT_FACTOR = 0.7;    // stutter on quick starts
+        public static final double OUTPUT_DRIVE_LIMIT_FACTOR  = 1.0;    // Part of attempt to fix motor
+        public static final double OUTPUT_ROTATE_LIMIT_FACTOR = 0.85;    // stutter on quick starts
 
         // When monitored while set at -1 to 1, seemed like the Steering PID output 
         // did not generate percent outputs greater than about .4
@@ -280,7 +279,7 @@ public final class Constants {
             public static final int steerMotorID = 2;
             public static final int canCoderID   = 1;
             // TODO: measure and enter Mod0 absolute wheel angle offset in degrees here
-            public static final Rotation2d angleOffset = Rotation2d.fromDegrees(61.5);
+            public static final Rotation2d angleOffset = Rotation2d.fromDegrees(58.5);
             public static final ShuffleboardLayout sBE_Layout0 = 
                                     sbt.getLayout("FL_Mod0", BuiltInLayouts.kList)
                                        .withPosition(FIRST_SWERVE_MOD_LIST_COL + 0,
@@ -300,7 +299,7 @@ public final class Constants {
             public static final int driveMotorID = 3;
             public static final int steerMotorID = 4;
             public static final int canCoderID   = 2;
-            public static final Rotation2d angleOffset = Rotation2d.fromDegrees(337.41);                             
+            public static final Rotation2d angleOffset = Rotation2d.fromDegrees(335.41);                             
             public static final ShuffleboardLayout sBE_Layout1 = 
                                      sbt.getLayout("FR_Mod1", BuiltInLayouts.kList)
                                         .withPosition(FIRST_SWERVE_MOD_LIST_COL + 1,
@@ -340,7 +339,7 @@ public final class Constants {
             public static final int driveMotorID = 7;
             public static final int steerMotorID = 8;
             public static final int canCoderID   = 4;
-            public static final Rotation2d angleOffset = Rotation2d.fromDegrees(34.58);
+            public static final Rotation2d angleOffset = Rotation2d.fromDegrees(35.58);
             public static final ShuffleboardLayout sBE_Layout3 = 
                                     sbt.getLayout("BR_Mod3", BuiltInLayouts.kList)
                                        .withPosition(FIRST_SWERVE_MOD_LIST_COL + 3,

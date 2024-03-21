@@ -27,6 +27,7 @@ import frc.lib.util.FileRecorder.NoteEvent;
 import frc.lib.util.FileRecorder.NoteRequest;
 import frc.robot.Constants;
 import frc.robot.NotableConstants.SC;
+import frc.robot.commands.RumbleCmd;
 
 public class ShooterSubsystem extends SubsystemBase {
   // The shooter is started via the prepareToShoot() method, called from MasterArmSubsystem.
@@ -255,8 +256,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
       case PREPPING_TO_SHOOT:
         m_elapsedTime = System.currentTimeMillis() - m_startTime;
-        m_velocityError = m_shooterTargetVel - m_shooterMotor.getVelocity().getValueAsDouble();
         if (m_elapsedTime > 700) {
+          new RumbleCmd(2, .5, 200).schedule();
           if (LOGGING_ACTIVE) {
             m_fileRecorder.recordMoveEvent( "Shooter, ",
                                             NoteEvent.TIMEOUT_OCCURED,
@@ -275,6 +276,7 @@ public class ShooterSubsystem extends SubsystemBase {
             && 
             (m_shooterMotor.getVelocity().getValueAsDouble() > m_shooterTargetVel)) {
           m_shooterStatus = ShooterState.WAITING_FOR_SHOT;
+          new RumbleCmd(2, .5, 200).schedule();
           if (LOGGING_ACTIVE) {
             m_fileRecorder.recordMoveEvent( "Shooter, ",
                                             NoteEvent.SETPOINT_REACHED,

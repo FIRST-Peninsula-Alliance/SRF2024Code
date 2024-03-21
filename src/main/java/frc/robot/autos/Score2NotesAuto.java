@@ -82,11 +82,11 @@ private double autoM = AutoC.AUTO_WAYPOINT_MULTIPLIER;
               m_swerveDrive);
 
       addCommands(
-            new ScoreIndexedSpeakerCmd(m_noteConductor),
-            new InstantCommand(() -> m_noteConductor.acquireNote()),
+            // new ScoreIndexedSpeakerCmd(m_noteConductor),
+            // new InstantCommand(() -> m_noteConductor.acquireNote()),
             new JustExitCmd(m_swerveDrive),
             // new FinalScoot(m_swerveDrive),
-            new ScoreDistantSpeakerCmd(m_noteConductor),
+            // new ScoreDistantSpeakerCmd(m_noteConductor),
             new InstantCommand(() -> m_swerveDrive.resetOdometry(moveTrajectory.getInitialPose())),
             swerveControllerCmd,
             new InstantCommand(()-> m_swerveDrive.stop())

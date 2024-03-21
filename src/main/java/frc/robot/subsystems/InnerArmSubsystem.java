@@ -47,7 +47,6 @@ public class InnerArmSubsystem extends SubsystemBase {
   private double m_avgInnerRawAbsPos;
   private double m_magnetOffset = IAC.INNER_ARM_CANCODER_MAGNET_OFFSET;
   private double m_temp;
-  private int m_count = 0;
   private boolean m_isDistantSpeakerShot = false;
 
   private final MotionMagicVoltage m_innerArmMagicCtrl = new MotionMagicVoltage(0.0)
@@ -352,9 +351,7 @@ public class InnerArmSubsystem extends SubsystemBase {
   // This method writes InnerArm data to the dashboard.
   private void publishInnerArmData() {
     m_avgInnerRawAbsPos = (m_avgInnerRawAbsPos * .95) + (getRawInnerArmPos() * .05);
-    if ((m_count++ % 25) < .001) { // update the average every 1/2 sec to make it easier to copy
-      SmartDashboard.putNumber("InnerAvgRawAbsPos ", m_avgInnerRawAbsPos);
-    }
+    SmartDashboard.putNumber("InnerAvgRawAbsPos ", m_avgInnerRawAbsPos);
     SmartDashboard.putNumber("InnerCorrAbsPos ", getAbsInnerArmPos());
 
     m_magnetOffsetEntry.setString(F.df4.format(m_magnetOffset));

@@ -26,6 +26,7 @@ public class JustExitCmd extends SequentialCommandGroup {
 
   /** Creates a new ScoreAndMove. */
   public JustExitCmd(SwerveSubsystem swerveDrive) {
+    System.out.println();
     m_swerveDrive = swerveDrive;
 
     TrajectoryConfig configExit =

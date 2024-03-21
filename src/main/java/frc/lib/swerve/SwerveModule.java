@@ -222,12 +222,9 @@ public class SwerveModule {
                                                            .withMagnetOffset(0.0);
         var ccConfig = new CANcoderConfiguration().withMagnetSensor(magnetSensorConfigs);
         m_absWheelAngleCANcoder.getConfigurator().apply(ccConfig);
-
-        // Remaining questions:
-        // Config boot strategy, timebase? No - the first is removed from P6, always boot to absolute,
-        // and the latter is configurable via setUpdateFrequency()
     }
 
+/*
      // call after Absolute offsets have been set
      public void slowCanCoderBusUsage() {
         // Don't use module CANCoders at all after initialization, so this is provided 
@@ -242,7 +239,7 @@ public class SwerveModule {
      public void speedUpCancoderBusReports() {
         m_absWheelAngleCANcoder.getPosition().setUpdateFrequency(100);
      }
-
+*/
     private void reportRevError(REVLibError errorCode) {
         if (errorCode != REVLibError.kOk) {
             SmartDashboard.putString("Mod "+m_modNum+"RevLibError = ", errorCode.toString());
@@ -279,17 +276,6 @@ public class SwerveModule {
                                                     // via code on every bootup?
         //SmartDashboard.putString("Steer Motor Setup", "Complete");
         resetToAbsolute();
-
-        // Additional item that may need to be considered for initialization
-        //  ?      m_steerController.setIZone(kIz);
-    }
-
-    // setSteerKP is called for each module from SwerveDrive subsystem
-    // whenever steerKP has been changed in the Shuffleboard "SwerveDrive" Tab. 
-    // Allows on the fly tuning, if kP is published. Change code before competition
-    // to disable this ability and thus avoid accidental changes.
-    public void setSteerKP(double kP) {
-        m_steerController.setP(kP);        
     }
 
     private void configDriveMotor(){
@@ -337,35 +323,6 @@ public class SwerveModule {
         if (! status.isOK() ) {
             SmartDashboard.putString("Failed to apply Drive configs in Mod "+m_modNum, " Error code: "+status.toString());
         }
-        // Remaining questions:
-        // should SetSafetyEnabled(true) be set for closed loop control where updates are not needed
-        // each loop? Assume true is default?
-        // Set VoltageCompensation? No, eliminated in P6, replaced with xxxVoltage control modes.
-        /* To make a remote cancoder over CANBus
-
-        // Configure CANcoder to zero the magnet appropriately 
-            CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
-            cc_cfg.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
-            cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-            cc_cfg.MagnetSensor.MagnetOffset = 0.4;
-            m_cc.getConfigurator().apply(cc_cfg);
-
-            TalonFXConfiguration fx_cfg = new TalonFXConfiguration();
-            fx_cfg.Feedback.FeedbackRemoteSensorID = m_cc.getDeviceID();
-            fx_cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-            fx_cfg.Feedback.SensorToMechanismRatio = 1.0;
-            fx_cfg.Feedback.RotorToSensorRatio = 12.8;
-
-            m_fx.getConfigurator().apply(fx_cfg);
-
-            Usage is the same as any status signal:
-
-            fx_pos.refresh();
-            cc_pos.refresh();
-
-            System.out.println("FX Position: " + fx_pos.toString());
-            System.out.println("CANcoder Position: " + cc_pos.toString());
-        */
     }
 
     public SwerveModuleState getState(){

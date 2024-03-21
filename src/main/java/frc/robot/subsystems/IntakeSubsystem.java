@@ -19,7 +19,8 @@ import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 
-import edu.wpi.first.wpilibj.PWM;
+//import edu.wpi.first.wpilibj.DutyCycleEncoder;
+//import edu.wpi.first.wpilibj.PWM;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.util.FileRecorder;
@@ -34,8 +35,10 @@ public class IntakeSubsystem extends SubsystemBase {
     private double m_intakeBaseSpeed = IC.INTAKE_BASE_SPEED;
     private static long m_startTime;
 
-    private PWM m_lidar = new PWM(IC.INTAKE_PWM_SENSOR_PORT_ID);
-    private double m_intakeSensorDistance;
+    //  private PWM m_lidar = new PWM(IC.INTAKE_PWM_SENSOR_PORT_ID);
+    //  private DutyCycleEncoder m_lidar = new DutyCycleEncoder(IC.INTAKE_PWM_SENSOR_PORT_ID);
+    //  private double m_intakeSensorDistance;
+    //  private PWM m_lidarDistance;
 
     private Supplier<String> m_currentStateName;
     private IntSupplier m_currentSeqNo;
@@ -191,17 +194,18 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void checkLidarNoteDetection() {
     // only check if actively acquiring a note
-    if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
-      m_intakeSensorDistance = m_lidar.getPulseTimeMicroseconds() * 0.1; // Convert raw PWM 
+    //if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
+      //m_intakeSensorDistance = m_lidar.getPulseTimeMicroseconds() * 0.1; // Convert raw PWM 
                                                                          // value to 
                                                                          // distance in cm
-      SmartDashboard.putNumber("Intake sensor distance = ", m_intakeSensorDistance);
-      if (m_intakeSensorDistance < IC.NOTE_ACQUIRED_DISTANCE_THRESHOLD) {
+      //m_intakeSensorDistance = m_lidar.get();
+      //SmartDashboard.putNumber("Intake sensor distance = ", m_intakeSensorDistance);
+      //if (m_intakeSensorDistance < IC.NOTE_ACQUIRED_DISTANCE_THRESHOLD) {
         // If sensor is accurate, might replace mannual LT button. To help ensure reliability,
         // add a trigger debounce time of at least .25 sec.
         //triggerNoteAcquired();
-      }
-    }
+      //}
+    //}
   }
 
   @Override

@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class SwerveSubsystem extends SubsystemBase {
+    private Pose2d m_location;
     private SwerveDriveOdometry m_swerveOdometry;
     private SwerveModule[] m_swerveMods;
     private SwerveModuleState[] m_states = new SwerveModuleState[4];
@@ -52,10 +53,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // private GenericEntry        m_gyroRollEntry;
     private GenericEntry        m_odometryPoseXEntry;
     private GenericEntry        m_odometryPoseYEntry;
-    private GenericEntry        m_steerKPEntry;
-
-    private double m_steerKP;
-    private int m_count = 0;
+    private GenericEntry        m_odometryHeadingEntry;
 
     public SwerveSubsystem() {
         m_gyro = new Pigeon2(GC.PIGEON_2_CANID, Constants.ROBO_RIO_BUS_NAME);
@@ -69,11 +67,6 @@ public class SwerveSubsystem extends SubsystemBase {
             new SwerveModule(2, SDC.BL_Mod2.MODULE_CONSTANTS),
             new SwerveModule(3, SDC.BR_Mod3.MODULE_CONSTANTS)
         };
-
-        // The SwerveModule class above will iniitalize each module with all
-        // PID coefficients, but also need to initialize steering KP here, so
-        // user has the oppostunity to change it on the fly.
-        m_steerKP = SDC.STEER_KP;
 
         // By pausing init for a second before setting module offsets, we avoid 
         // a bug with inverting motors.
@@ -252,9 +245,10 @@ public class SwerveSubsystem extends SubsystemBase {
                 m_gyroYawEntry =        sl.add("Gyro Yaw", "0").getEntry();
                 m_gyroRawYawEntry =     sl.add("Gyro Raw Yaw", "0").getEntry();
                 m_isFieldOrientedEntry= sl.add("Field Oriented ", "Yes").getEntry();
-                m_steerKPEntry =    sl.add("Steer Motor kP ", F.df4.format(SDC.STEER_KP)).getEntry();
-                m_odometryPoseXEntry =  sl.add("Pose X", F.df2.format(m_swerveOdometry.getPoseMeters().getX())).getEntry();
-                m_odometryPoseYEntry =  sl.add("Pose Y", F.df2.format(m_swerveOdometry.getPoseMeters().getY())).getEntry();
+                m_location = m_swerveOdometry.getPoseMeters();
+                m_odometryPoseXEntry =  sl.add("Pose X", F.df2.format(m_location.getX())).getEntry();
+                m_odometryPoseYEntry =  sl.add("Pose Y", F.df2.format(m_location.getY())).getEntry();
+                m_odometryHeadingEntry = sl.add("Pose Heading", F.df2.format(m_location.getRotation().getRadians())).getEntry();
                 // m_gyroPitchEntry = // opt
                 // m_gyroRollEntry = // opt
                 // m_cenOfRotationEntry = // opt
@@ -264,9 +258,9 @@ public class SwerveSubsystem extends SubsystemBase {
                 // m_maxMeasuredAccelEntry = swerveSubsysLayout
                 if ((m_gyroYawEntry == null)
                     || (m_isFieldOrientedEntry == null)
-                    || (m_steerKPEntry == null)
                     || (m_odometryPoseXEntry == null)
-                    || (m_odometryPoseYEntry == null)) {
+                    || (m_odometryPoseYEntry == null)
+                    || (m_odometryHeadingEntry == null)) {
                     SmartDashboard.putString("RobotData List Entries", "Null Entry handles(s) encountered");
                 }
             }
@@ -276,8 +270,9 @@ public class SwerveSubsystem extends SubsystemBase {
     public void publishSwerveDriveData() {
             m_gyroYawEntry.setString(F.df1.format(getYaw2d().getDegrees()));
             m_gyroRawYawEntry.setString(F.df1.format(m_gyro.getYaw().getValueAsDouble()));
-            m_odometryPoseXEntry.setString(F.df2.format(m_swerveOdometry.getPoseMeters().getX()));
-            m_odometryPoseYEntry.setString(F.df2.format(m_swerveOdometry.getPoseMeters().getY()));           
+            m_odometryPoseXEntry.setString(F.df2.format(m_location.getX()));
+            m_odometryPoseYEntry.setString(F.df2.format(m_location.getY()));           
+            m_odometryHeadingEntry.setString(F.df2.format(m_location.getRotation().getRadians()));
             m_isFieldOrientedEntry.setString(m_isFieldOriented ? "Yes" : "No");
         // m_gyroPitchEntry
         // m_gyroRollEntry
@@ -287,42 +282,13 @@ public class SwerveSubsystem extends SubsystemBase {
         }
     }
 
-    public void checkSteerKP() {
-        // This method should only be called (from periodic()) if tuning of 
-        // KP is enabled. We don't want dashboard changes to KP to be possible 
-        // during matches!
-        // If steer KP is changed, validate it (limit new KP to positive values 
-        // between .0001 and 4), then publish the vetted value, 
-        // and update all module PIDs with that new KP
-        if (m_steerKPEntry != null) {
-            double steerKP = m_steerKPEntry.getDouble(SDC.STEER_KP);
-            if (Math.abs(steerKP - m_steerKP) < .0001) {
-                m_steerKP = Math.abs(steerKP);
-                m_steerKP = (m_steerKP < 0.0001) ? 0.0001 : m_steerKP;
-                m_steerKP = (m_steerKP > 4.0) ? 4.0 : m_steerKP;
-                m_steerKPEntry.setString(F.df4.format(m_steerKP));
-                for(SwerveModule mod : m_swerveMods) {
-                    mod.setSteerKP(m_steerKP);
-                }
-            }
-        }
-    }
 
     @Override
     public void periodic() {
         // Update odometry on every loop instance
-        m_swerveOdometry.update(getYaw2d(), getModulePositions());  
-
-        // Reduce the data bandwidth used for telemetry by only 
-        // publishing and/or checking for input every 15 loops, 
-        // i.e. every 300 ms.
-        m_count++;
-        if ((m_count % 5) < .001) {
-            if (SDC.STEER_KP_TUNING_ENABLED) { 
-                checkSteerKP();
-            }
-            publishSwerveDriveData();
-        }
+        m_swerveOdometry.update(getYaw2d(), getModulePositions()); 
+        m_location = m_swerveOdometry.getPoseMeters();
+        publishSwerveDriveData();
     }
 
     // This is a test routine, designed to rotate all modules
