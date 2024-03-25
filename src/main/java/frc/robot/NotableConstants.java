@@ -273,5 +273,49 @@ public final class NotableConstants {           // As in all these constants are
 
         public static final double ALLOWED_SHOOTER_AIM_ERROR = 2.0/360.0;           // allow 2 deg error    
     }
+
+    /***********************************************************
+     * Climb and Elevator Constants
+     ***********************************************************/
+    public static final class CC {             // Climber constants
+        public static final double SAFETY_THRESHOLD_TIME_BEFORE_MATCH_END = 40;     // 25 seconds
+        
+        public static final int CLIMB_FALCON_ID = 20;
+        public static final NeutralModeValue CLIMB_MOTOR_NEUTRAL_MODE = NeutralModeValue.Brake;
+        public static final InvertedValue CLIMB_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
+        public static final double CLIMB_OPEN_LOOP_RAMP_PERIOD = 0.0;
+        public static final double CLIMB_CLOSED_LOOP_RAMP_PERIOD = 0.0;
+
+        // Climber gear ratio
+        public static double CLIMB_GEAR_RATIO = 30;
+
+        public static final int ELEVATOR_NEO550_ID = 21;
+        public static final boolean INVERT_ELEVATOR_NEO550 = false;
+        // Elevator gear ratio
+        public static double ELEVATOT_GEAR_RATIO = 10;
+
+        public static final double  CLIMB_SUPPLY_CURRENT_LIMIT          = 50.0;
+        public static final double  CLIMB_SUPPLY_CURRENT_THRESHOLD      = 90.0;
+        public static final double  CLIMB_SUPPLY_CURRENT_TIME_THRESHOLD =  0.1;
+        public static final boolean CLIMB_ENABLE_SUPPLY_CURRENT_LIMIT   = true;
+        public static final double  CLIMB_STATOR_CURRENT_LIMIT          = 50.0;
+        public static final boolean CLIMB_ENABLE_STATOR_CURRENT_LIMIT   = true;
+
+        public static final double CLIMB_OUTPUT_LIMIT_FACTOR = 1.0;
+
+        public static final double ELEVATOR_MIN_POS  = -2.0;            // only for legacy note
+        public static final double ELEVATOR_MAX_POS = 122.0;            // current safety thresholds used instead
+
+        public static final int ELEVATOR_SMART_CURRENT_LIMIT     = 16;
+        public static final int ELEVATOR_SECONDARY_CURRENT_LIMIT = 20;
+
+        public static final double CLIMBER_DUTY_CYCLE  = 1.0;
+        public static final double ELEVATOR_DUTY_CYCLE = 0.32;
+
+        public static final int    ELEVATOR_SAFETY_THRESHOLD_CURRENT_LIMIT  = 15;
+        public static final long   ELEVATOR_INRUSH_LOCKOUT_TIME             = 350;      // ms
+        public static final long   CLIMB_WINCH_INRUSH_LOCKOUT_TIME          = 400;            // ms
+        public static final double WINCH_SAFETY_THRESHOLD_CURRENT_LIMIT     = 40.0;
+    }
 }
 

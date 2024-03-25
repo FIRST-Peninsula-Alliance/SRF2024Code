@@ -9,7 +9,6 @@ import frc.robot.subsystems.MasterArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 
 public class ScoreAndExitAuto extends SequentialCommandGroup {
   private MasterArmSubsystem m_noteConductor;
@@ -23,8 +22,8 @@ public class ScoreAndExitAuto extends SequentialCommandGroup {
     
     addCommands(
                 new ScoreIndexedSpeakerCmd(m_noteConductor),
-                new JustExitCmd(m_swerveDrive),
-                new InstantCommand(()-> m_swerveDrive.stop())
+                new JustExitCmd(m_swerveDrive)
+                // new InstantCommand(()-> m_swerveDrive.stop())
                );
     }
 }

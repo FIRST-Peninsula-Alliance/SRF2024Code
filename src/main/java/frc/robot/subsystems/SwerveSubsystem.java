@@ -32,7 +32,7 @@ public class SwerveSubsystem extends SubsystemBase {
     private SwerveModule[] m_swerveMods;
     private SwerveModuleState[] m_states = new SwerveModuleState[4];
     private Pigeon2 m_gyro;
-    private Translation2d m_cenOfRotationOffset = SDC.ROTATE_ABOUT_CEN;
+    private Translation2d m_cenOfRotationOffset = SDC.REL_POS2D_CEN;
     private boolean m_isFieldOriented = true;       // default is Field Oriented on start
     private static double m_varMaxOutputFactor = 1.0;      // A temporary driver settable speed 
                                                     // reduction factor, normally 1.0.
@@ -61,6 +61,8 @@ public class SwerveSubsystem extends SubsystemBase {
         m_gyro.getConfigurator().apply(p2Config);
         zeroGyro();
 
+        SmartDashboard.putNumber("Chosen Module Circumference M =", SDC.WHEEL_CIRCUMFERENCE_M);
+
         m_swerveMods = new SwerveModule[] {
             new SwerveModule(0, SDC.FL_Mod0.MODULE_CONSTANTS),
             new SwerveModule(1, SDC.FR_Mod1.MODULE_CONSTANTS),
@@ -87,23 +89,23 @@ public class SwerveSubsystem extends SubsystemBase {
     // on the fly, to either the center of the robot (default) or to one of the 
     // four module wheels.
     public void setFLCenOfRotation() {
-        m_cenOfRotationOffset = SDC.ROTATE_ABOUT_FL;
+        m_cenOfRotationOffset = SDC.REL_POS2D_FL;
     }
 
     public void setFRCenOfRotation() {
-        m_cenOfRotationOffset = SDC.ROTATE_ABOUT_FR;
+        m_cenOfRotationOffset = SDC.REL_POS2D_FR;
     }
 
     public void setBLCenOfRotation() {
-        m_cenOfRotationOffset = SDC.ROTATE_ABOUT_BL;
+        m_cenOfRotationOffset = SDC.REL_POS2D_BL;
     }
 
     public void setBRCenOfRotation() {
-        m_cenOfRotationOffset = SDC.ROTATE_ABOUT_BR;
+        m_cenOfRotationOffset = SDC.REL_POS2D_BR;
     }
 
     public void resetCenOfRotation() {
-        m_cenOfRotationOffset = SDC.ROTATE_ABOUT_CEN;
+        m_cenOfRotationOffset = SDC.REL_POS2D_CEN;
     }
 
     // drive() is the handler for teleop joystick driving, typically called from 
@@ -201,7 +203,7 @@ public class SwerveSubsystem extends SubsystemBase {
     public SwerveModulePosition[] getModulePositions(){
         SwerveModulePosition[] positions = new SwerveModulePosition[4];
         for(SwerveModule mod : m_swerveMods){
-            positions[mod.m_modNum] = mod.getPosition();
+            positions[mod.m_modNum] = mod.getModulePosition();
         }
         return positions;
     }

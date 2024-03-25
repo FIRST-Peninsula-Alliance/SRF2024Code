@@ -116,6 +116,7 @@ public class MasterArmSubsystem extends SubsystemBase {
 
   // Network Table entries for publishing MasterArmSubsystem data
   private GenericEntry m_absAxlePosEntry;
+  private GenericEntry m_rawAxlePosEntry;
   private GenericEntry m_armSetpointPosEntry;
   private GenericEntry m_armPIDOutEntry;
   private GenericEntry m_AxleVelocityEntry;
@@ -660,10 +661,11 @@ public class MasterArmSubsystem extends SubsystemBase {
                                       .withProperties(Map.of("Label position", "LEFT"));
     sbLayout.add("Ids ", F.df1.format(MAC.MASTER_ARM_FALCON_ID)+"  "+F.df1.format(MAC.MASTER_ARM_ENCODER_ID));
     sbLayout.add("Offset", F.df1.format(MAC.MASTER_ARM_ENCODER_MAGNET_OFFSET));
-    m_absAxlePosEntry     = sbLayout.add("Abs Pos", "0").getEntry();
-    m_armSetpointPosEntry = sbLayout.add("SetPt Pos", "0").getEntry();
+    m_rawAxlePosEntry     = sbLayout.add("Raw_P", "0").getEntry();
+    m_absAxlePosEntry     = sbLayout.add("Abs_P", "0").getEntry();
+    m_armSetpointPosEntry = sbLayout.add("SetPt", "0").getEntry();
     m_armPIDOutEntry      = sbLayout.add("PID Out", "0").getEntry();
-    m_AxleVelocityEntry   = sbLayout.add("Axle Vel", "0").getEntry();
+    m_AxleVelocityEntry   = sbLayout.add("Axle_V", "0").getEntry();
     m_falconAmpsEntry     = sbLayout.add("Amps", "0").getEntry();
 
     // Setup the "Note States" data list
@@ -683,6 +685,7 @@ public class MasterArmSubsystem extends SubsystemBase {
   }
 
   private void publishMasterArmData() {
+    m_rawAxlePosEntry.setString(F.df4.format(getRawMasterArmPos()));
     m_absAxlePosEntry.setString(F.df3.format(getAbsMasterArmPos()));
     m_armSetpointPosEntry.setString(F.df3.format(m_currentMasterArmSetpoint));
     m_armPIDOutEntry.setString(F.df3.format(m_masterArmMotor.getClosedLoopOutput().getValueAsDouble()));

@@ -227,8 +227,6 @@ public class ShooterSubsystem extends SubsystemBase {
                                                   // flash memory. Is it even necessary, since
                                                   // all registers (except ID?) are written 
                                                   // via code on every bootup?
-      // Do not set software limits. TODO - set limits to allow initialize movement, then reset to normal
-      // when initialize is compelte.
   }
 
 /*

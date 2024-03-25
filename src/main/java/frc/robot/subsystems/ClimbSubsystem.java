@@ -20,7 +20,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.Constants.CC;
+import frc.robot.NotableConstants.CC;
 
 public class ClimbSubsystem extends SubsystemBase {
   private TalonFX m_climbMotor = new TalonFX(CC.CLIMB_FALCON_ID, Constants.CANIVORE_BUS_NAME);

@@ -18,46 +18,36 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
-public class JustExitCmd extends SequentialCommandGroup {
+public class ReturnToSpeakerCmd extends SequentialCommandGroup {
   private SwerveSubsystem m_swerveDrive;
 
   /** Creates a new ScoreAndMove. */
-  public JustExitCmd(SwerveSubsystem swerveDrive) {
+  public ReturnToSpeakerCmd(SwerveSubsystem swerveDrive) {
     m_swerveDrive = swerveDrive;
 
-    TrajectoryConfig configExit =
+    TrajectoryConfig configMove =
             new TrajectoryConfig(AutoC.AUTO_MAX_SPEED_M_PER_SEC *
                                     AutoC.AUTO_SPEED_FACTOR_GENERIC,
                                 AutoC.AUTO_MAX_ACCEL_M_PER_SEC2 *
                                     AutoC.AUTO_ACCEL_FACTOR_GENERIC)
                 .setKinematics(SDC.SWERVE_KINEMATICS);
                 // .addConstraint(AutoConstants.autoVoltageConstraint);
-        configExit.setReversed(false);
+    configMove.setReversed(true);   // drive backwards
 
-        // An example trajectory to follow, one path.  All units in meters.
-
-    Trajectory exitTrajectory =
+    Trajectory returnTrajectory =
         TrajectoryGenerator.generateTrajectory(
-            // Start at the origin facing the -X direction, away from the
-            // speaker goal. Position bumpers up against the subwoofer 
-            // front, even if offset to one side (i.e. no angle shot with
-            // this auto). Because the subwoofer extends ~1 m into the field,
-            // the origin X is not really 0, but for now, consider it good.
-            // On first test, a 2 m move resulted in closer to 8 m of movement. 
-            // Need better tuning for the trajectory PIDs, but for now, set distance to
-            // just .5 m, expecting about 2 m result, which should clear the zone.
-
-            new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-            List.of(new Translation2d(.25, 0.0),
-                    new Translation2d(0.5, 0.0),
-                    new Translation2d(0.75, 0.0),
+            // Start at the end of the last trajectory, which should be the 
+            // one defined in JustExitCmd
+            new Pose2d(1.5, 0.0, Rotation2d.fromDegrees(0.0)),
+            List.of(new Translation2d(1.25, 0.0),
                     new Translation2d(1.0, 0.0),
-                    new Translation2d(1.25, 0.0)),
-            new Pose2d(1.5, 0, new Rotation2d(0.0)),
-            configExit);
+                    new Translation2d(0.75, 0.0),
+                    new Translation2d(0.5, 0.0),
+                    new Translation2d(0.25, 0.0)),
+            new Pose2d(0.0, 0, Rotation2d.fromDegrees(0.0)),
+            configMove);
 
       ProfiledPIDController thetaController =
           new ProfiledPIDController(AutoC.KP_THETA_CONTROLLER,
@@ -68,7 +58,7 @@ public class JustExitCmd extends SequentialCommandGroup {
 
       SwerveControllerCommand swerveControllerCmd =
           new SwerveControllerCommand(
-              exitTrajectory,
+              returnTrajectory,
               m_swerveDrive::getPose,
               SDC.SWERVE_KINEMATICS,
               new PIDController(AutoC.KP_X_CONTROLLER, AutoC.KI_X_CONTROLLER, 0),
@@ -78,8 +68,7 @@ public class JustExitCmd extends SequentialCommandGroup {
               m_swerveDrive);
 
       addCommands(
-                  // Note: only call resetOdometry() upon the first move in Auto !
-                  new InstantCommand(() -> m_swerveDrive.resetOdometry(exitTrajectory.getInitialPose())),
+                  // Just move, do not reset odometry!
                   swerveControllerCmd
                  );
     }

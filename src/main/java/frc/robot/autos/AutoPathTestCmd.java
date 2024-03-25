@@ -44,10 +44,12 @@ public class AutoPathTestCmd extends SequentialCommandGroup {
                 .setKinematics(SDC.SWERVE_KINEMATICS);
                 // .addConstraint(AutoConstants.autoVoltageConstraint);
         config.setReversed(false);
+        TrajectoryConfig configReversed = config;
+        configReversed.setReversed(true);
 
         ProfiledPIDController thetaController =
                                 new ProfiledPIDController(AutoC.KP_THETA_CONTROLLER,
-                                                          0,
+                                                          AutoC.KI_THETA_CONTROLLER,
                                                           0,
                                                           AutoC.K_THETA_CONTROLLER_CONSTRAINTS);
         thetaController.enableContinuousInput(-Math.PI, Math.PI);
@@ -60,7 +62,7 @@ public class AutoPathTestCmd extends SequentialCommandGroup {
             TrajectoryGenerator.generateTrajectory(
                 // Start at the origin facing the +X direction, 
                 // the curve will be more toward the left of the robot.
-                new Pose2d(0.0, 0.0, new Rotation2d(0.0)),   // origin, facing forward
+                new Pose2d(0.0, 0.0, Rotation2d.fromDegrees(0.0)),   // origin, facing forward
                 List.of(new Translation2d(0.624, 0.0),              // first point, moving forward
                         new Translation2d(0.856, 0.033),                // first curve
                         new Translation2d(1.074, 0.163),
@@ -70,45 +72,38 @@ public class AutoPathTestCmd extends SequentialCommandGroup {
                         new Translation2d(1.175, 0.974),
                         new Translation2d(1.044, 1.117),
                         new Translation2d(0.894, 1.207),
-                        new Translation2d(0.736, 1.250) 
-                        ),
+                        new Translation2d(0.736, 1.250)),
                 // End of first path, facing forward
-                // should be the terminus of the waypoints above.
-                new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-                           config);
+                new Pose2d(0.5, 1.25, Rotation2d.fromDegrees(0.0)),
+                config);
 
         Trajectory curveTest2 =
             TrajectoryGenerator.generateTrajectory(
                 // Start Pose must be the same as the current location of the 
-                // Robot, i..e the same  as the end of curveTest1 
-                new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-                List.of(new Translation2d(0.0, 0.0),
-                        new Translation2d(0.0, 0.0),
-                        new Translation2d(0.0, 0.0)
-                       ),
+                // Robot, i.e. the same  as the end of curveTest1 
+                new Pose2d(0.5, 1.25, Rotation2d.fromDegrees(0.0)),
+                List.of(new Translation2d(0.75, 1.0),
+                        new Translation2d(1.0, 0.75),
+                        new Translation2d(1.25, 0.5)),
                 // End of 2nd curve
-                new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-                           config);
+                new Pose2d(1.5, 0.25, Rotation2d.fromDegrees(0.0)),
+                config);
 
         Trajectory curveTest3 =
             TrajectoryGenerator.generateTrajectory(
-                // Start Pose must be the same as the current location of the 
-                // Robot, i.e. the same  as the end of curveTest2 
-                new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-                List.of(new Translation2d(0.0, 0.0),
-                        new Translation2d(0.0, 0.0),
-                        new Translation2d(0.0, 0.0)
-                        ),
-                // End of 3rd curve
-                new Pose2d(0.0, 0.0, new Rotation2d(0.0)),
-                           config);                                    
+                new Pose2d(1.5, 0.25, Rotation2d.fromDegrees(0.0)),
+                List.of(new Translation2d(1.25, 0.25),
+                        new Translation2d(.75, 0.0),
+                        new Translation2d(0.25, 0.0)),
+                new Pose2d(0.0, 0.0, Rotation2d.fromDegrees(0.0)),
+                configReversed);                                    
     
         SwerveControllerCommand swerveCurveTest1Cmd =
             new SwerveControllerCommand(
                 curveTest1,
                 m_swerve::getPose,
                 SDC.SWERVE_KINEMATICS,
-                new PIDController(AutoC.KP_X_CONTROLLER, 0, 0),
+                new PIDController(AutoC.KP_X_CONTROLLER, AutoC.KI_X_CONTROLLER, 0),
                 new PIDController(AutoC.KP_Y_CONTROLLER, 0, 0),
                 thetaController,
                 m_swerve::setModuleStates,
@@ -119,7 +114,7 @@ public class AutoPathTestCmd extends SequentialCommandGroup {
                 curveTest2,
                 m_swerve::getPose,
                 SDC.SWERVE_KINEMATICS,
-                new PIDController(AutoC.KP_X_CONTROLLER, 0, 0),
+                new PIDController(AutoC.KP_X_CONTROLLER, AutoC.KI_X_CONTROLLER, 0),
                 new PIDController(AutoC.KP_Y_CONTROLLER, 0, 0),
                 thetaController,
                 m_swerve::setModuleStates,
@@ -130,7 +125,7 @@ public class AutoPathTestCmd extends SequentialCommandGroup {
                     curveTest3,
                     m_swerve::getPose,
                     SDC.SWERVE_KINEMATICS,
-                    new PIDController(AutoC.KP_X_CONTROLLER, 0, 0),
+                    new PIDController(AutoC.KP_X_CONTROLLER, AutoC.KI_X_CONTROLLER, 0),
                     new PIDController(AutoC.KP_Y_CONTROLLER, 0, 0),
                     thetaController,
                     m_swerve::setModuleStates,

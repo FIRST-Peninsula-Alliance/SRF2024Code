@@ -44,109 +44,43 @@ public class Score60DegLeftAndExitAuto extends SequentialCommandGroup {
 
         // An example trajectory to follow, one path.  All units in meters.
 
-    Trajectory gotoNewNoteTrajectory =
+    Trajectory exitTrajectory =
         TrajectoryGenerator.generateTrajectory(
-            // Start at the origin backed up against the Subwolfer side, facing
-            // away from the speaker goal. Probably best to power up robot while against
-            // alliance wall, then reposition against subwolfer, so gyro is alligned with field.
-            // Because the subwoofer extends ~1 m into the field,
-            // the robot's origin is not really 0, but for now, consider it good.
-            // On first test, a 2 m move resulted in closer to 8 m of movement. 
-            // Need better tuning for the trajectory PIDs, but for now, set distance to
-            // just 1.0 m, expecting about 2.5 m result, which should clear the zone.
-
-            new Pose2d(0.0, 0.0, new Rotation2d(60.0)),
+            // Power up robot while against alliance wall, then reposition against 
+            // subwolfer left side, so gyro is alligned relative to field. 
+            new Pose2d(0.0, 0.0, Rotation2d.fromDegrees(300.0)),
             List.of(new Translation2d(0.25, 0.0),
-                    new Translation2d(0.5, 0.0)),
-            new Pose2d(0.75, 0.0, new Rotation2d(0.0)),
-            configPath);
-
-   Trajectory pickupNoteTrajectory =
-        TrajectoryGenerator.generateTrajectory(
-            // Start at the origin backed up against the Subwolfer side, facing
-            // away from the speaker goal. Probably best to power up robot while against
-            // alliance wall, then reposition against subwolfer, so gyro is alligned with field.
-            // Because the subwoofer extends ~1 m into the field,
-            // the robot's origin is not really 0, but for now, consider it good.
-            // On first test, a 2 m move resulted in closer to 8 m of movement. 
-            // Need better tuning for the trajectory PIDs, but for now, set distance to
-            // just 1.0 m, expecting about 2.5 m result, which should clear the zone.
-
-            new Pose2d(0.0, 0.0, new Rotation2d(60.0)),
-            List.of(new Translation2d(0.25, 0.0),
-                    new Translation2d(0.5, 0.0)),
-            new Pose2d(0.75, 0.0, new Rotation2d(0.0)),
-            configPath);
-
-    Trajectory returnToSpeakerTrajectory =
-        TrajectoryGenerator.generateTrajectory(
-            // Start at the origin backed up against the Subwolfer side, facing
-            // away from the speaker goal. Probably best to power up robot while against
-            // alliance wall, then reposition against subwolfer, so gyro is alligned with field.
-            // Because the subwoofer extends ~1 m into the field,
-            // the robot's origin is not really 0, but for now, consider it good.
-            // On first test, a 2 m move resulted in closer to 8 m of movement. 
-            // Need better tuning for the trajectory PIDs, but for now, set distance to
-            // just 1.0 m, expecting about 2.5 m result, which should clear the zone.
-
-            new Pose2d(0.0, 0.0, new Rotation2d(60.0)),
-            List.of(new Translation2d(0.25, 0.0),
-                    new Translation2d(0.5, 0.0)),
-            new Pose2d(0.75, 0.0, new Rotation2d(0.0)),
+                    new Translation2d(0.5, 0.0),
+                    new Translation2d(0.75, 0.0),
+                    new Translation2d(1.0, 0.0),
+                    new Translation2d(1.25, 0.0)),
+            new Pose2d(1.5, 0.0, Rotation2d.fromDegrees(0.0)),
             configPath);
 
     ProfiledPIDController thetaController =
-          new ProfiledPIDController(AutoC.KP_THETA_CONTROLLER,
-                                    0,
+        new ProfiledPIDController(AutoC.KP_THETA_CONTROLLER,
+                                    AutoC.KI_THETA_CONTROLLER,
                                     0,
                                     AutoC.K_THETA_CONTROLLER_CONSTRAINTS);
-      thetaController.enableContinuousInput(-Math.PI, Math.PI);
+    thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-      SwerveControllerCommand swerveControllerCmd1 =
-          new SwerveControllerCommand(
-              gotoNewNoteTrajectory,
-              m_swerveDrive::getPose,
-              SDC.SWERVE_KINEMATICS,
-              new PIDController(AutoC.KP_X_CONTROLLER, 0, 0),
-              new PIDController(AutoC.KP_Y_CONTROLLER, 0, 0),
-              thetaController,
-              m_swerveDrive::setModuleStates,
-              m_swerveDrive);
+    SwerveControllerCommand swerveControllerCmd =
+        new SwerveControllerCommand(
+                                    exitTrajectory,
+                                    m_swerveDrive::getPose,
+                                    SDC.SWERVE_KINEMATICS,
+                                    new PIDController(AutoC.KP_X_CONTROLLER, AutoC.KI_X_CONTROLLER, 0),
+                                    new PIDController(AutoC.KP_Y_CONTROLLER, 0, 0),
+                                    thetaController,
+                                    m_swerveDrive::setModuleStates,
+                                    m_swerveDrive
+                                   );
 
-      SwerveControllerCommand swerveControllerCmd2 =
-          new SwerveControllerCommand(
-              pickupNoteTrajectory,
-              m_swerveDrive::getPose,
-              SDC.SWERVE_KINEMATICS,
-              new PIDController(AutoC.KP_X_CONTROLLER, 0, 0),
-              new PIDController(AutoC.KP_Y_CONTROLLER, 0, 0),
-              thetaController,
-              m_swerveDrive::setModuleStates,
-              m_swerveDrive);
-
-      SwerveControllerCommand swerveControllerCmd3 =
-          new SwerveControllerCommand(
-              returnToSpeakerTrajectory,
-              m_swerveDrive::getPose,
-              SDC.SWERVE_KINEMATICS,
-              new PIDController(AutoC.KP_X_CONTROLLER, 0, 0),
-              new PIDController(AutoC.KP_Y_CONTROLLER, 0, 0),
-              thetaController,
-              m_swerveDrive::setModuleStates,
-              m_swerveDrive);
-
-      addCommands(
-            new ScoreIndexedSpeakerCmd(m_noteConductor),
-            new InstantCommand(() -> m_swerveDrive.resetOdometry(gotoNewNoteTrajectory.getInitialPose())),
-            swerveControllerCmd1,
-            // Make next two command parallel
-            new InstantCommand(()-> m_noteConductor.acquireNote()),      // depends upon sensor! Otherwise, need timeout
-            swerveControllerCmd2,
-            // waitCmd?
-            swerveControllerCmd3,
-            new ScoreIndexedSpeakerCmd(m_noteConductor),
-            new InstantCommand(()-> m_swerveDrive.stop())
-            );
-        }
+    addCommands(
+                new ScoreIndexedSpeakerCmd(m_noteConductor),
+                new InstantCommand(() -> m_swerveDrive.resetOdometry(exitTrajectory.getInitialPose())),
+                swerveControllerCmd,
+                new InstantCommand(()-> m_swerveDrive.stop())
+               );
     }
-
+}

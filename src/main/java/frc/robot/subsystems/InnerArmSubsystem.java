@@ -55,8 +55,8 @@ public class InnerArmSubsystem extends SubsystemBase {
   private long m_startTime;
 
   private GenericEntry m_magnetOffsetEntry;
+  private GenericEntry m_rawAxlePosEntry;
   private GenericEntry m_absAxlePosEntry;
-  private GenericEntry m_falconPosEntry;
   private GenericEntry m_armSetpointEntry;
   private GenericEntry m_armPIDOutEntry;
   private GenericEntry m_axleVelocityEntry;
@@ -340,11 +340,11 @@ public class InnerArmSubsystem extends SubsystemBase {
                                       .withProperties(Map.of("Label position", "LEFT"));
     sbLayout.add("Ids: ", F.df1.format(IAC.INNER_ARM_FALCON_ID)+"  "+F.df1.format(IAC.INNER_ARM_CANCODER_ID));
     m_magnetOffsetEntry   = sbLayout.add("Offset ", F.df3.format(m_magnetOffset)).getEntry();
-    m_absAxlePosEntry     = sbLayout.add("Abs Pos", "0").getEntry();
-    m_falconPosEntry      = sbLayout.add("Motor Pos", "0").getEntry();
-    m_armSetpointEntry    = sbLayout.add("SetPt Pos", "0").getEntry();
+    m_rawAxlePosEntry     = sbLayout.add("Raw_P", "0").getEntry();
+    m_absAxlePosEntry     = sbLayout.add("Abs_P", "0").getEntry();
+    m_armSetpointEntry    = sbLayout.add("SetPt", "0").getEntry();
     m_armPIDOutEntry      = sbLayout.add("PID Out", "0").getEntry();
-    m_axleVelocityEntry   = sbLayout.add("Axel Vel", "0").getEntry();
+    m_axleVelocityEntry   = sbLayout.add("Axel_V", "0").getEntry();
     m_falconAmpsEntry     = sbLayout.add("Amps", "0").getEntry();
   }
   
@@ -355,8 +355,8 @@ public class InnerArmSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("InnerCorrAbsPos ", getAbsInnerArmPos());
 
     m_magnetOffsetEntry.setString(F.df4.format(m_magnetOffset));
-    m_absAxlePosEntry.setString(F.df3.format(getAbsInnerArmPos()));
-    m_falconPosEntry.setString(F.df3.format(m_innerArmMotor.getPosition().getValueAsDouble()));
+    m_rawAxlePosEntry.setString(F.df4.format(getRawInnerArmPos()));
+    m_absAxlePosEntry.setString(F.df4.format(getAbsInnerArmPos()));
     m_armSetpointEntry.setString(F.df3.format(m_innerArmSetpoint));
     m_armPIDOutEntry.setString(F.df3.format(m_innerArmMotor.getClosedLoopOutput().getValueAsDouble()));
     m_axleVelocityEntry.setString(F.df3.format(m_innerArmCANcoder.getVelocity().getValueAsDouble()));

@@ -20,14 +20,13 @@ import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
+import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
-
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.REVLibError;
@@ -142,7 +141,7 @@ public class SwerveModule {
         }
         else {
             // Drive using VelocityVoltage PID, using Falcon encoder units and default Slot0
-            m_driveClosedLoop.Velocity = desiredState.speedMetersPerSecond * SDC.MPS_TO_FALCON_RPS_FACTOR;
+            m_driveClosedLoop.Velocity = desiredState.speedMetersPerSecond * SDC.MPS_TO_TALONFX_RPS_FACTOR;
             m_velocityFeedForward = feedforward.calculate(desiredState.speedMetersPerSecond);
             m_driveMotor.setControl(m_driveClosedLoop.withFeedForward(m_velocityFeedForward));
         }
@@ -156,21 +155,54 @@ public class SwerveModule {
         m_lastAngle = desiredAngle;
     }
 
+    public void testDriveMotorRotation() {
+        // this routime spins the drive motor slowly under percent output
+        // to check that it is configured correctly (CCW Positive)
+        m_driveMotor.setControl(m_driveOpenLoop
+                                .withUpdateFreqHz(50)
+                                .withOutput(0.25));
+    }
+
+    public void testSteerMotorRotation() {
+        // this routime spins the steering motor slowly under percent output
+        // to check that it is configured correctly (CCW Positive)
+        m_steerController.setReference(.2, CANSparkBase.ControlType.kDutyCycle);
+    }
+
     // getAngle2d returns the current swerve module direction as a Rotation2d value.
     private Rotation2d getAngle2d() {
         return Rotation2d.fromDegrees(m_integratedSteerEncoder.getPosition());
     }
 
-    // NEO encoder is initialized to use native units (deg)
+    // setNeoPosDeg is called from resetToAbsolute. The NEO encoder is now configured to 
+    // use native units (deg), so the angle argument must be in units of degrees (range 0-360)
+    // reflecting the actual module direction (relative to the robot) upon initialization.
+    // With the module aimed straight ahead, bevel gear to the left, the angle should be 0.0
     public void setNeoPosDeg(double angle) {
         m_integratedSteerEncoder.setPosition(angle);
     }
 
-    // getNeoPosDeg returns the value of the Neo's integrated encoder
-    // in degrees (since configured with the conversion factor) in the 
-    // range 0 to 360.
+    // getNeoPosDeg returns the current value of the Neo's integrated encoder (initialized 
+    // at startup to the module's correct absolute direction) in degrees, in the range 0 to 360.
     public double getNeoPosDeg() {
-        return Math.IEEEremainder(m_integratedSteerEncoder.getPosition(), 360.0) + 180.0;
+        return normalizeAngle0To360(m_integratedSteerEncoder.getPosition());
+    }
+
+    public double normalizeAngle0To360(double angle) {
+        // There are many ways to normalize an angle to the range 0 to 360 degrees with 
+        // robustness for all possible negative and positive values, and we need to do
+        // that for the integrated encoder in the NEO because while the PID is configured to
+        // treat it as a "continuous" sensor (0 to 360) the sensor itself just continues to
+        // linearly increase or decrease the position value per the rotation direction.
+        // For keeping track of module heading it helps to bring it back to baseband, i.e.
+        // to the range 0 - 360.
+        // Note that for module steering PID purposes in this swerve drive code, native
+        // degrees are used.
+        // However, for most WPILib swerve support APIs, angles are expected to be radians 
+        // in the range -PI to PI, using Rotation2d. This is not a problem as the Rotation2d 
+        // object provides utility methods to convert degrees to radians and vice versa.
+        // Math.IEEEremainder(angle, 360.0) will also normalize an angle;
+        return ((angle % 360) + 360) % 360;
     }
 
     public double getRawNeoPos() {
@@ -252,7 +284,6 @@ public class SwerveModule {
         // else at a lower rate, to minimize can bus traffic.
         //reportRevError(CANSparkMaxUtil.setCANSparkMaxBusUsage(m_steerMotor, Usage.kPositionOnly));
         reportRevError(m_steerMotor.setSmartCurrentLimit(SDC.STEER_SMART_CURRENT_LIMIT));
-        reportRevError(m_steerMotor.setSecondaryCurrentLimit(SDC.STEER_SECONDARY_CURRENT_LIMIT));
         // setInverted returns void
         m_steerMotor.setInverted(SDC.STEER_MOTOR_INVERT);
         reportRevError(m_steerMotor.setIdleMode(SDC.STEER_MOTOR_NEUTRAL_MODE));
@@ -279,7 +310,7 @@ public class SwerveModule {
     }
 
     private void configDriveMotor(){
-        var openLoopConfig = new OpenLoopRampsConfigs() .withDutyCycleOpenLoopRampPeriod(0)
+        var openLoopConfig = new OpenLoopRampsConfigs().withDutyCycleOpenLoopRampPeriod(0)
                                                        .withVoltageOpenLoopRampPeriod(SDC.OPEN_LOOP_RAMP_PERIOD);
                                                        //.withTorqueOpenLoopRampPeriod(0);
         var closedLoopConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(0)
@@ -327,17 +358,20 @@ public class SwerveModule {
 
     public SwerveModuleState getState(){
         return new SwerveModuleState(
-            m_driveMotor.getVelocity().getValueAsDouble() * SDC.FALCON_RPS_TO_MPS_FACTOR, 
+            getVelocityMPS(),
             getAngle2d()
         ); 
     }
 
     public double getPositionM(){
-        return m_driveMotor.getPosition().getValueAsDouble() * SDC.FALCON_ROT_TO_M_FACTOR; 
+        return m_driveMotor.getPosition().getValueAsDouble() * SDC.TALONFX_ROT_TO_M_FACTOR; 
     }
 
+    public double getVelocityMPS() {
+        return m_driveMotor.getVelocity().getValueAsDouble() * SDC.TALONFX_RPS_TO_MPS_FACTOR;
+    }
 
-    public SwerveModulePosition getPosition(){
+    public SwerveModulePosition getModulePosition(){
         return new SwerveModulePosition(
             getPositionM(), 
             getAngle2d()
@@ -370,12 +404,12 @@ public class SwerveModule {
         // Current wheel direction
         steerEncoderDegEntry.setString(F.df1.format(getNeoPosDeg()));
         // Wheel direction (steer) setpoint
-        steerSetpointDegEntry.setString(F.df1.format(Math.IEEEremainder(m_lastAngle, 360.0) + 180.0));
+        steerSetpointDegEntry.setString(F.df1.format(normalizeAngle0To360(m_lastAngle)));
         //steerSetpointDegEntry.setString(F.df1.format(m_lastAngle));
         // SteerMotor PID applied ouutput    
         steerPIDOutputEntry.setString(F.df2.format(m_steerMotor.getAppliedOutput()));
         // Wheel Speed
-        wheelCurrSpeedEntry.setString(F.df1.format(m_driveMotor.getVelocity().getValueAsDouble() * SDC.FALCON_RPS_TO_MPS_FACTOR));
+        wheelCurrSpeedEntry.setString(F.df1.format(getVelocityMPS()));
         // Wheel position, meters
         wheelCurrPosEntry.setString(F.df2.format(getPositionM()));
         // Wheel Amps
