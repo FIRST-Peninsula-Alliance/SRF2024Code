@@ -209,8 +209,11 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void zeroGyro(){
-        //m_gyro.setYaw(0);
         m_gyro.reset();
+    }
+
+    public void setGyro(double newHeadingDeg){
+        m_gyro.setYaw(newHeadingDeg);
     }
 
     public Rotation2d  getYaw2d() {

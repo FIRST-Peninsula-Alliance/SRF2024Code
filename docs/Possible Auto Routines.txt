@@ -1,0 +1,60 @@
+FromLeft60ToLeftNote (distance is invariant)
+ExitLeft60ToWall (distance depends on alliance color)
+FromCenterToCenterNote (straight forward)
+No simple exit when starting position is CENTER! Only option is to get 2nd note, or don't move (do nothing)
+FromRight300toRightNote
+FromRight300ToWall (distance depends on alliance color)
+FromCenterNoteToDistanceShot
+FromLeftNoteToDistanceShot
+FromRightNoteToDistanceShot
+FromDistanceShotToLeftNote
+FromDistanceShotToRightNote
+
+ScoreLeftThenExit:
+Score
+if (red) exitToWallLong else if (blue) exitToWallShort
+Done
+
+ScoreRightThenExit:
+if (red) exitToWallShort else if  (blue) exitToWallLong
+Done
+
+Score4NoteAuto from Center:
+Score
+FromCenterToCenterNote along with acquireNote
+FromCenterNoteToDistanceShot
+Score
+FromDistanceShotToRightNote  along with acquireNote
+FromRightNoteToDistanceShot
+Score
+FromDistanceShotToLeftNote along with acquireNote
+FromLeftNoteToDistanceShot
+Score
+Done
+
+Score4NoteAutoFromRight:
+Score
+FromRight300toRightNote along with acquireNote
+FromRightNoteToIndexedShot
+Score
+FromCenterToCenterNote along with acquireNote
+FromCenterNoteToDistanceShot
+Score
+FromDistanceShottoLeftNote along with acquireNote
+FromLeftNoteToIndexedShot
+Score
+Done
+
+Score4NoteAutoFromLeft:
+Score
+FromLeft60ToLeftNot along with acquireNote
+FromLeftNoteToIndexedShot
+Score
+FromCenterToCenterNote along with acquireNote
+FromCenterNoteToDistanceShot
+Score
+FromDistanceShotToRightNote along with acquire Note
+FromRightNoteToDIstanceShot
+Score
+Done
+

@@ -19,6 +19,8 @@ import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalSource;
 //import edu.wpi.first.wpilibj.DutyCycleEncoder;
 //import edu.wpi.first.wpilibj.PWM;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -27,31 +29,32 @@ import frc.lib.util.FileRecorder;
 import frc.lib.util.FileRecorder.NoteRequest;
 import frc.robot.Constants;
 import frc.robot.NotableConstants.IC;
+import frc.robot.commands.RumbleCmd;
 
 public class IntakeSubsystem extends SubsystemBase {
-    private TalonFX m_intakeMotor;
-    private static boolean m_intakeIsRunning = false;        // True when in Acquire / Eject mode
-    private static double m_intakeSpeedFactor = IC.HOLD_NOTE;
-    private double m_intakeBaseSpeed = IC.INTAKE_BASE_SPEED;
-    private static long m_startTime;
+  private TalonFX m_intakeMotor;
+  private static boolean m_intakeIsRunning = false;        // True when in Acquire / Eject mode
+  private static double m_intakeSpeedFactor = IC.HOLD_NOTE;
+  private double m_intakeBaseSpeed = IC.INTAKE_BASE_SPEED;
+  private static long m_startTime;
 
-    //  private PWM m_lidar = new PWM(IC.INTAKE_PWM_SENSOR_PORT_ID);
-    //  private DutyCycleEncoder m_lidar = new DutyCycleEncoder(IC.INTAKE_PWM_SENSOR_PORT_ID);
-    //  private double m_intakeSensorDistance;
-    //  private PWM m_lidarDistance;
+  private DigitalSource m_lidarSource = new DigitalInput(IC.INTAKE_PWM_SENSOR_PORT_ID);
+  private LidarLitePWM m_lidar = new LidarLitePWM(m_lidarSource);
+  private double m_intakeSensorDistance;
+  private int m_intakeThresholdCount = 0;
 
-    private Supplier<String> m_currentStateName;
-    private IntSupplier m_currentSeqNo;
-    private FileRecorder m_fileRecorder;
-    private static boolean LOGGING_ACTIVE = FileRecorder.isFileRecorderAvail();
+  private Supplier<String> m_currentStateName;    // Name of current note state from MasterArmSubsystem
+  private IntSupplier m_currentSeqNo;
+  private FileRecorder m_fileRecorder;
+  private static boolean LOGGING_ACTIVE = FileRecorder.isFileRecorderAvail();
 
-    // Declare Phoenix6 control request objects for the Intake Motor:
-    // No need for VelocityVoltage PID control (with or without arbitrary 
-    // feed forward) for note pickup: just use DutyCycle out at 90% for
-    // pickup and release, and 25% for holding.
-    // The Update rate is set to 0, so need to refresh motor drive at least 
-    // every 50 ms (at 20 ms per loop, should be good)
-    private final DutyCycleOut m_intakeCtrl = new DutyCycleOut(m_intakeBaseSpeed * m_intakeSpeedFactor).withUpdateFreqHz(0);
+  // Declare Phoenix6 control request object for the Intake Motor:
+  // No need for PID control (with or without arbitrary 
+  // feed forward) for note pickup: just use DutyCycle out at 90% for
+  // pickup and release, and 25% for holding.
+  // The Update rate is set to 0, so need to refresh motor drive at least 
+  // every 50 ms (at 20 ms per loop, should be good)
+  private final DutyCycleOut m_intakeCtrl = new DutyCycleOut(m_intakeBaseSpeed * m_intakeSpeedFactor).withUpdateFreqHz(0);
   
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(Supplier<String> currentStateName, 
@@ -65,8 +68,9 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   // All methods that require motor action set the m_intakeSpeedFactor
-  // variable to the sesired value. periodic() will poll this variable
-  // and send the appropriate control request to the motor accordingly.
+  // variable to the corresponding value, which also serves as the intake
+  // state variable. periodic() will poll this state variable
+  // and send the appropriate control request to the motor.
   public void acquireNote() {
     m_intakeIsRunning = true;
     m_intakeSpeedFactor = IC.ACQUIRE_NOTE;
@@ -120,7 +124,36 @@ public class IntakeSubsystem extends SubsystemBase {
   public boolean isIntakeIdle() {
     return isIntakeStopped();
   }
-    
+
+  public boolean isNoteAcquired() {
+    // This method will only look for a note when trying to acquire one
+    // i.e. not when holding, and not when ejecting, a note.
+    // This method is used as a trigger to call holdNote() !
+    if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
+      // return (! m_intakeCompleteSensor.get());
+      return false;
+    } else {
+      return isNoteHeld();
+    }
+  }
+
+  public boolean isNoteHeld() {
+    // This method returns true if a Note is being held, but since the 
+    // Intake sensor can only see the note when the inner Arm is extended, 
+    // need to infer presence of Note. If m_intakeSpeedFactor is equal to 
+    // IC.HOLD_NOTE, and m_intakeIsRunning, assume we ar eholding a Note.
+    return (m_intakeSpeedFactor == IC.HOLD_NOTE) && m_intakeIsRunning;
+  }
+
+  public boolean isIntakeStopped() {
+    return (! m_intakeIsRunning);
+  }
+  
+  public double getVelocityRPS() {
+    return m_intakeMotor.getVelocity().getValueAsDouble(); 
+  }
+
+  // maintainIntakeSpeed is called from periodic() when the intake is running.
   public void maintainIntakeSpeed() {
     m_intakeCtrl.Output = m_intakeBaseSpeed * m_intakeSpeedFactor;
     if (m_intakeSpeedFactor == 0.0) {
@@ -154,58 +187,32 @@ public class IntakeSubsystem extends SubsystemBase {
     }
   }
 
-  public double getVelocityRPS() {
-    return m_intakeMotor.getVelocity().getValueAsDouble(); 
-  }
-
-  public boolean isNoteAcquired() {
-    // This method will only look for a note when trying to acquire one
-    // i.e. not when holding, and not when ejecting, a note.
-    // This method is used as a trigger to call holdNote() !
-    if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
-      // return (! m_intakeCompleteSensor.get());
-      return false;
-    } else {
-      return isNoteHeld();
-    }
-  }
-
-  public boolean isNoteHeld() {
-    // This method returns true if a Note is being held, but since the 
-    // Intake sensor can only see the note when the inner Arm is extended, 
-    // need to infer presence of Note. If m_intakeSpeedFactor is equal to 
-    // IC.HOLD_NOTE, and m_intakeIsRunning, assume we ar eholding a Note.
-    return (m_intakeSpeedFactor == IC.HOLD_NOTE) && m_intakeIsRunning;
-  }
-
-  public void triggerNoteAcquired() {
-    if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
-      holdNote();
-    }
-  }
-
-  public boolean isIntakeStopped() {
-    return (! m_intakeIsRunning);
-  }
-  
   public void publishIntakeData() {
     SmartDashboard.putNumber("Intake Mode = ", m_intakeSpeedFactor);
   }
 
   public void checkLidarNoteDetection() {
-    // only check if actively acquiring a note
-    //if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
-      //m_intakeSensorDistance = m_lidar.getPulseTimeMicroseconds() * 0.1; // Convert raw PWM 
-                                                                         // value to 
-                                                                         // distance in cm
-      //m_intakeSensorDistance = m_lidar.get();
-      //SmartDashboard.putNumber("Intake sensor distance = ", m_intakeSensorDistance);
-      //if (m_intakeSensorDistance < IC.NOTE_ACQUIRED_DISTANCE_THRESHOLD) {
-        // If sensor is accurate, might replace mannual LT button. To help ensure reliability,
-        // add a trigger debounce time of at least .25 sec.
-        //triggerNoteAcquired();
-      //}
-    //}
+    m_intakeSensorDistance = m_lidar.getDistance();
+    SmartDashboard.putNumber("Note Dist Sensor", m_intakeSensorDistance);
+          // only check if actively acquiring a note
+    if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
+      if (m_intakeSensorDistance < IC.NOTE_ACQUIRED_DISTANCE_THRESHOLD) {
+        m_intakeThresholdCount++;
+        if (m_intakeThresholdCount > 5) {
+          triggerNoteAcquired();
+          new RumbleCmd(2, .5, 400).schedule();
+        }
+      }
+    }
+    m_intakeThresholdCount = 0;
+  }
+
+  // triggeerNoteAcquired() may be called from the LidarLite sensor polling method above,
+  // or manually via the leftTriggerButton on the game controller.
+  public void triggerNoteAcquired() {
+    if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
+      holdNote();
+    }
   }
 
   @Override
@@ -216,11 +223,10 @@ public class IntakeSubsystem extends SubsystemBase {
         stopIntake();
       }
     }
-    checkLidarNoteDetection();
-    publishIntakeData();
-
     if (m_intakeIsRunning) {
       maintainIntakeSpeed();
     }
+    checkLidarNoteDetection();
+    publishIntakeData();
   }
 }

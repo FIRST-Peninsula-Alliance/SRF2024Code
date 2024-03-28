@@ -9,6 +9,8 @@ import frc.robot.subsystems.MasterArmSubsystem;
 
 public class ScoreIndexedSpeakerCmd extends Command {
   private MasterArmSubsystem m_noteConductor;
+  private boolean            m_readyToScore;
+  private long               m_startTime;
 
   /** Creates a new ScoreIndexedSpeakerCmd. */
   public ScoreIndexedSpeakerCmd(MasterArmSubsystem noteConductor) {
@@ -22,19 +24,24 @@ public class ScoreIndexedSpeakerCmd extends Command {
   @Override
   public void initialize() {
     m_noteConductor.prepForIndexedSpeakerScore();
+    m_readyToScore = false;
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    if (m_noteConductor.isReadyToScoreSpeaker()) {
-      m_noteConductor.scoreNote();
+    if (m_readyToScore) {
+      // Allow an extra 300 ms to get up to speed
+      // This emulates a typical reaction time for a human player to respond to
+      // the teleop "ready to shoot" rumble on the gameController.
+      if ((System.currentTimeMillis() - m_startTime) > 300) {
+        m_noteConductor.scoreNote();
+      }
+    } else if (m_noteConductor.isReadyToScoreSpeaker()) {
+      m_readyToScore = true;
+      m_startTime = System.currentTimeMillis();
     }
   }
-
-  // Called once the command ends or is interrupted.
-  @Override
-  public void end(boolean interrupted) {}
 
   // Returns true when the command should end.
   @Override

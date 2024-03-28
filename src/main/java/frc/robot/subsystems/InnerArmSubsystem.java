@@ -101,6 +101,7 @@ public class InnerArmSubsystem extends SubsystemBase {
   public void adjustInnerArmSetpoint(double direction, boolean debug_on) {
     // direction, debug, and/or current state (WAITING_FOR_NOTE, if not debug)
     // have already been vetted by MasterArmSubsystem
+    System.out.println("Adjusting IA "+direction);
     m_innerArmSetpoint = limitInnerArmPosition(m_innerArmSetpoint + (direction / 360.0));
     gotoPosition(m_innerArmSetpoint);
   }
@@ -370,5 +371,14 @@ public class InnerArmSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per loop
     publishInnerArmData();
+    /*
+    if (Math.abs(m_innerArmSetpoint - IAC.INDEXED_SPEAKER_GOAL_POS) < .01) {
+      //if (m_innerArmCANcoder.getAbsolutePosition().getValueAsDouble() + .355 > .005) {
+      //  adjustInnerArmSetpoint(1, false );
+      if (m_innerArmCANcoder.getAbsolutePosition().getValueAsDouble() + .355 < -0.005) {
+        adjustInnerArmSetpoint(-1, false);
+      }
+    }
+    */
   }
 }

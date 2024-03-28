@@ -75,8 +75,8 @@ public final class NotableConstants {           // As in all these constants are
         public static final double MASTER_ARM_OUTPUT_LIMIT_FACTOR    =  0.8;
 
         // Position units are all in rotations
-        public static final double DISTANT_SPEAKER_SHOT_POS     = -0.19705;
-        public static final double INDEXED_SPEAKER_SHOT_POS     = -0.2317;
+        public static final double DISTANT_SPEAKER_SHOT_POS     = -0.1925;
+        public static final double INDEXED_SPEAKER_SHOT_POS     = -0.21;
         public static final double LOW_SAFE_TO_ROTATE_IN_POS    = -0.2116;
         public static final double LOW_SAFE_TO_ROTATE_OUT_POS   = -0.17;
         public static final double NOTE_PICKUP_POS              = -0.154;
@@ -107,7 +107,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue INNER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
         
         public static final int INNER_ARM_CANCODER_ID = 11;
-        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = -0.43743;
+        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = -0.41905;
         public static final AbsoluteSensorRangeValue INNER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue INNER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -126,7 +126,7 @@ public final class NotableConstants {           // As in all these constants are
 
         //INNER Arm Motor PID Values
         public static final double INNER_ARM_KP = 40.0;
-        public static final double INNER_ARM_KI = 0.0;
+        public static final double INNER_ARM_KI = 0.5;
         public static final double INNER_ARM_KD = 0.1;
         public static final double INNER_ARM_KF = 0.0;
         public static final double INNER_ARM_KS = 0.3;
@@ -152,8 +152,8 @@ public final class NotableConstants {           // As in all these constants are
 
         public static final double BUMPER_CONTACT_POS       =  0.12;
         public static final double NOTE_PICKUP_POS          =  0.13;
-        public static final double DISTANT_SPEAKER_GOAL_POS = -0.342;
-        public static final double INDEXED_SPEAKER_GOAL_POS = -0.315;
+        public static final double DISTANT_SPEAKER_GOAL_POS = -0.35;
+        public static final double INDEXED_SPEAKER_GOAL_POS = -0.335;
         public static final double AMP_GOAL_POS             =  0.041;
 
         public static final double ALLOWED_INNER_ARM_POS_ERROR  = 5.0 / 360.0;
@@ -215,7 +215,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final double ACQUIRE_NOTE =  1.0;
         public static final double EJECT_NOTE   = -1.0;
 
-        public static final double NOTE_ACQUIRED_DISTANCE_THRESHOLD = 30.0;     // anything less than 30 cm
+        public static final double NOTE_ACQUIRED_DISTANCE_THRESHOLD = 40.0;     // anything less than 30 cm
                                                                                 // means note detected
     }
 

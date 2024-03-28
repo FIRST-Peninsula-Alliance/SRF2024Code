@@ -426,8 +426,21 @@ public class MasterArmSubsystem extends SubsystemBase {
   /*********************************************
    * Status utilities to assist with Autonomous 
    *********************************************/
+  // isIdle is typically used to ask if the shooter has completed a previously requested shot.
   public boolean isIdle() {
     return m_nowPlaying == Repetoire.NOTE_HANDLER_IDLE;
+  }
+
+  public boolean isIntakeDoneDeploying() {
+    return ((m_nowPlaying == Repetoire.WAIT_FOR_NOTE)        // Expected result of deployment
+            ||
+            (m_nowPlaying != Repetoire.PREP_TO_GET_NOTE));   // "Cover all the bases" logic
+  }
+
+  public boolean isIntakeRetrieved() {
+    return ((m_nowPlaying == Repetoire.WAIT_FOR_SPECIFIED_GOAL) // Expected result of retrieval
+            ||
+            (m_nowPlaying != Repetoire.RETRIEVE_NOTE));         // "Cover all the bases" logic
   }
 
   public boolean isReadyToScoreSpeaker() {

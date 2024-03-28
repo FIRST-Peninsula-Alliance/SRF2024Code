@@ -431,6 +431,7 @@ public final class Constants {
         public static final double KP_X_CONTROLLER = 10.0;
         public static final double KI_X_CONTROLLER = 0.5;
         public static final double KP_Y_CONTROLLER = 10.0;
+        public static final double KI_Y_CONTROLLER = 0.5;
         public static final double KP_THETA_CONTROLLER = 6.0;
         public static final double KI_THETA_CONTROLLER = 0.5;
     
@@ -441,5 +442,13 @@ public final class Constants {
 
         public static final double AUTO_SPEED_FACTOR_GENERIC = 1.0;
         public static final double AUTO_ACCEL_FACTOR_GENERIC = 1.0;
+
+        // Declare handles for choosable starting positions
+        // Normally would use an enum for this, but Java/compiler was not cooperating -
+        // need better understanding of enum syntax requirements, apparently.
+        // For now, just use string objects. 
+        public static final String STARTING_LEFT = "Left";
+        public static final String STARTING_CENTER = "Center";
+        public static final String STARTING_RIGHT  = "Right";
     }
 }
