@@ -5,15 +5,19 @@
 package frc.robot.autos;
 
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.autos.TrajectoryPaths.ExitRedSpkrLeftToLeftWallCmd;
 import frc.robot.commands.ScoreIndexedSpeakerCmd;
 import frc.robot.subsystems.MasterArmSubsystem;
+import frc.robot.subsystems.SwerveSubsystem;
 
-public class JustScoreAuto extends SequentialCommandGroup {
-
+public class ScoreThenExitRedLeftAuto extends SequentialCommandGroup {
+  
   /* Constructor */
-  public JustScoreAuto(MasterArmSubsystem masterArmSubsystem) {
+  public ScoreThenExitRedLeftAuto(MasterArmSubsystem noteConductor, 
+                               SwerveSubsystem swerveDrive) {
     addCommands(
-                new ScoreIndexedSpeakerCmd(masterArmSubsystem)
+                new ScoreIndexedSpeakerCmd(noteConductor),
+                new ExitRedSpkrLeftToLeftWallCmd(swerveDrive)
                );
   }
 }

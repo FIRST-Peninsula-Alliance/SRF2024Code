@@ -26,15 +26,15 @@ import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
 // This command moves the robot from the center against the speaker sub-woofer
 // to the center pre-staged note. Regarding the Y dimension, while the field is
-// asymetrical, all Y movement can be considered relative to the center of the
-// sub-woofer, regardless of which Alliance color is assigned, so no need to
-// check for alliance colors.
+// asymetrical, all Y movement can be considered symetrical by defining the
+// center of the rightmost note as Y = 0.0, regardless of the Alliance color.
+
 public class MoveSpkrCenToCenNoteCmd extends SequentialCommandGroup {
   Trajectory moveSpkrCenToCenNote = null;
   Command firstCmd = null;
   SwerveControllerCommand moveSpkrCenToCenNoteCmd = null;
 
-  /** Creates a new MoveSpkrCenToCenNoteCmd. */
+  /* Constructor */
   public MoveSpkrCenToCenNoteCmd(SwerveSubsystem swerveDrive, boolean resetOdometryFlag) {
     TrajectoryConfig moveConfig = new TrajectoryConfig((AutoC.AUTO_MAX_SPEED_M_PER_SEC *
                                                         AutoC.AUTO_SPEED_FACTOR_GENERIC),

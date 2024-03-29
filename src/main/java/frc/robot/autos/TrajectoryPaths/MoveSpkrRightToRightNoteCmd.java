@@ -9,7 +9,6 @@ import frc.robot.Constants.*;
 
 import java.util.List;
 
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.math.controller.PIDController;
@@ -24,16 +23,16 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
 // This command moves the robot from the Right against the speaker sub-woofer
-// to the Right pre-staged note. Regarding the Y dimension, while the field is
-// asymetrical, all Y movement can be considered relative to a Y origin at the
-// right most note, regardless of which Alliance color is assigned, 
-// (i.e. negative Y values are OK) so no need to check for alliance colors.
+// to the Right pre-staged note.
+// Y origin is defined to be at the center of the right most pre-staged note, 
+// regardless of Alliance color. This makes the field symetric RRT Auto
+// routines.
+
 public class MoveSpkrRightToRightNoteCmd extends SequentialCommandGroup {
   Trajectory moveSpkrRightToRightNote = null;
-  Command firstCmd = null;
   SwerveControllerCommand moveSpkrRightToRightNoteCmd = null;
 
-  /** Creates a new MoveSpkrRightToRightNoteCmd. */
+  /* Constructor */
   public MoveSpkrRightToRightNoteCmd(SwerveSubsystem swerveDrive) {
     TrajectoryConfig moveConfig = new TrajectoryConfig((AutoC.AUTO_MAX_SPEED_M_PER_SEC *
                                                         AutoC.AUTO_SPEED_FACTOR_GENERIC),

@@ -8,10 +8,10 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.commands.ScoreIndexedSpeakerCmd;
 import frc.robot.subsystems.MasterArmSubsystem;
 
-public class JustScoreAuto extends SequentialCommandGroup {
+public class JustScoreLeftAuto extends SequentialCommandGroup {
 
   /* Constructor */
-  public JustScoreAuto(MasterArmSubsystem masterArmSubsystem) {
+  public JustScoreLeftAuto(MasterArmSubsystem masterArmSubsystem) {
     addCommands(
                 new ScoreIndexedSpeakerCmd(masterArmSubsystem)
                );

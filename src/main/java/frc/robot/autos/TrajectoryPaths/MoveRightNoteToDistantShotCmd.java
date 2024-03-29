@@ -23,7 +23,8 @@ import frc.robot.Constants.SDC;
 import frc.robot.subsystems.SwerveSubsystem;
 
 public class MoveRightNoteToDistantShotCmd extends SequentialCommandGroup {
-  /** Creates a new MoveRightNoteToIndexedShotCmd. */
+
+  /* Constructor */
   public MoveRightNoteToDistantShotCmd(SwerveSubsystem swerveDrive) {
     TrajectoryConfig moveConfig = new TrajectoryConfig((AutoC.AUTO_MAX_SPEED_M_PER_SEC *
                                                         AutoC.AUTO_SPEED_FACTOR_GENERIC),

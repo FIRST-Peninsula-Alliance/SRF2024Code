@@ -22,13 +22,15 @@ import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
-// This command moves the robot from the Distant Shot Position (center) to the Right Note for
-// pickup. The robot must turn 90 degrees CCW (to 90 deg) while moving.
+// This command moves the robot from the Distant Shot Position (center) 
+// to the Right Note for pickup. The robot must turn -90 degrees (CW) 
+// (to 270 deg) while moving.
+
 public class MoveDistShotToRightNoteCmd extends SequentialCommandGroup {
   Trajectory moveDistShotToRightNote = null;
   SwerveControllerCommand moveDistShotToRightNoteCmd = null;
 
-  /** Creates a new MoveDistShotToRightNoteCmd. */
+  /* Constructor */
   public MoveDistShotToRightNoteCmd(SwerveSubsystem swerveDrive) {
     TrajectoryConfig moveConfig = new TrajectoryConfig((AutoC.AUTO_MAX_SPEED_M_PER_SEC *
                                                         AutoC.AUTO_SPEED_FACTOR_GENERIC),

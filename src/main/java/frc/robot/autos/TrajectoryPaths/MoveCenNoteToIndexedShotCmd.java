@@ -23,7 +23,8 @@ import frc.robot.Constants.SDC;
 import frc.robot.subsystems.SwerveSubsystem;
 
 public class MoveCenNoteToIndexedShotCmd extends SequentialCommandGroup {
-  /** Creates a new MoveCenNoteToIndexedShotCmd. */
+
+  /* Constructor */
   public MoveCenNoteToIndexedShotCmd(SwerveSubsystem swerveDrive) {
     TrajectoryConfig moveConfig = new TrajectoryConfig((AutoC.AUTO_MAX_SPEED_M_PER_SEC *
                                                         AutoC.AUTO_SPEED_FACTOR_GENERIC),
