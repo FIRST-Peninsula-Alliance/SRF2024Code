@@ -86,15 +86,15 @@ public class RobotContainer {
         m_justScoreRightAuto            = new JustScoreRightAuto(m_masterArmSubsystem);
 
         m_autoRoutineChooser.setDefaultOption("Score 2 Notes Center", m_score2NotesCenterAuto);
+        m_autoRoutineChooser.addOption("Score 2 Notes Left", m_score2NotesLeftAuto);
+        m_autoRoutineChooser.addOption("Score 2 Notes Right", m_score2NotesRightAuto);
+        m_autoRoutineChooser.addOption("Score Center, then idle", m_justScoreCenterAuto);
+        m_autoRoutineChooser.addOption("Score Left, then idle", m_justScoreLeftAuto);
+        m_autoRoutineChooser.addOption("Score Right, then idle", m_justScoreRightAuto);
         m_autoRoutineChooser.addOption("Score Left, RED exit", m_scoreThenExitRedLeftAuto);
         m_autoRoutineChooser.addOption("Score Left, BLUE exit", m_scoreThenExitBlueLeftAuto);
         m_autoRoutineChooser.addOption("Score Right, RED exit", m_scoreThenExitRedRightAuto);
         m_autoRoutineChooser.addOption("Score Right, BLUE exit", m_scoreThenExitBlueRightAuto);
-        m_autoRoutineChooser.addOption("Score Left, then idle", m_justScoreLeftAuto);
-        m_autoRoutineChooser.addOption("Score Right, then idle", m_justScoreLeftAuto);
-        m_autoRoutineChooser.addOption("Score Center, then idle", m_justScoreLeftAuto);
-        m_autoRoutineChooser.addOption("Score 2 Notes Left", m_score2NotesLeftAuto);
-        m_autoRoutineChooser.addOption("Score 2 Notes Right", m_score2NotesRightAuto);
         SmartDashboard.putData("Autonomous Selection:", m_autoRoutineChooser);
 
         configureButtonBindings();
@@ -237,7 +237,6 @@ public class RobotContainer {
                    (selectedAuto == m_score2NotesRightAuto)) {
             m_swerveSubsystem.setGyro(300.0);
         } 
-
         return selectedAuto;
     }
 }

@@ -84,25 +84,27 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void holdNote() {
-    m_intakeIsRunning = true;
-    m_intakeSpeedFactor = IC.HOLD_NOTE;
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_HOLD,
                                         System.currentTimeMillis(),
                                         m_currentStateName.get(),
                                         m_currentSeqNo.getAsInt());
     }
+    m_intakeIsRunning = true;
+    m_intakeSpeedFactor = IC.HOLD_NOTE;
   }
 
   public void ejectNote() {
-    m_intakeIsRunning = true;
-    m_intakeSpeedFactor = IC.EJECT_NOTE;
-    m_startTime = System.currentTimeMillis();
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_EJECT,
                                         m_startTime,
                                         m_currentStateName.get(),
                                         m_currentSeqNo.getAsInt());
+    }
+    if (m_intakeSpeedFactor != IC.EJECT_NOTE) {
+      m_intakeIsRunning = true;
+      m_intakeSpeedFactor = IC.EJECT_NOTE;
+      m_startTime = System.currentTimeMillis();
     }
   }
 

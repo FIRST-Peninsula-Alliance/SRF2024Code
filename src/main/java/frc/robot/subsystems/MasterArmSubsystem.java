@@ -276,7 +276,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         m_isSafeToReturn = true;
     } else {
       new RumbleCmd(2, .5, 400).schedule();
-      System.out.println("PrepForDistantSpeaker @ NST State = "+m_nowPlaying.toString());
+      System.out.println("ScoreNote @ NST State = "+m_nowPlaying.toString());
     }
   }
 
@@ -453,11 +453,11 @@ public class MasterArmSubsystem extends SubsystemBase {
 
   /*****************************************************
    * Utility to make ShooterSubsystem handle available
-   * RobotContainer
+   * to RobotContainer
    * ***************************************************/
-    public ShooterSubsystem getShooterSubsystem() {
-      return m_shooterSubsystem;
-    }
+   // public ShooterSubsystem getShooterSubsystem() {
+   //   return m_shooterSubsystem;
+   // }
 
   /*************************************************************
    * @param setpoint
