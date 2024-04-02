@@ -423,16 +423,16 @@ public final class Constants {
      * Autonomous Constants
      ***********************************************************/
     public static final class AutoC {       // AutoC = short for AutoConstants
-        public static final double AUTO_MAX_SPEED_M_PER_SEC = 4.5;       // was 4.5
-        public static final double AUTO_MAX_ACCEL_M_PER_SEC2 = 2.0;      // was 3.0
-        public static final double AUTO_MAX_ANG_VEL_RAD_PER_SEC = 4.0*Math.PI;
-        public static final double AUTO_MAX_ANG_ACCEL_RAD_PER_SEC2 = 1.5*Math.PI;    // was 2.0
+        public static final double AUTO_MAX_SPEED_M_PER_SEC = 4.5;
+        public static final double AUTO_MAX_ACCEL_M_PER_SEC2 = 3.5;      // was 3.0
+        public static final double AUTO_MAX_ANG_VEL_RAD_PER_SEC = 6.5*Math.PI;
+        public static final double AUTO_MAX_ANG_ACCEL_RAD_PER_SEC2 = 3.5*Math.PI;
 
-        public static final double KP_X_CONTROLLER = 10.0;
+        public static final double KP_X_CONTROLLER = 20.0;
         public static final double KI_X_CONTROLLER = 0.5;
-        public static final double KP_Y_CONTROLLER = 10.0;
+        public static final double KP_Y_CONTROLLER = 20.0;
         public static final double KI_Y_CONTROLLER = 0.5;
-        public static final double KP_THETA_CONTROLLER = 6.0;
+        public static final double KP_THETA_CONTROLLER = 12.0;
         public static final double KI_THETA_CONTROLLER = 0.5;
     
         /* Constraint for the motion profiled robot angle controller */

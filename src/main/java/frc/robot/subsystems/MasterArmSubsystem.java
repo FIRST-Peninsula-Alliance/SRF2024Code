@@ -25,6 +25,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
@@ -94,19 +95,13 @@ public class MasterArmSubsystem extends SubsystemBase {
    * state changes and errors to a thumb drive.
    ********************************************************/
   private static boolean DEBUG_ON = false;
-  public static boolean NOTE_LOGGING_ACTIVE = false;
+  public static boolean NOTE_LOGGING_ACTIVE = true;
   public static boolean CTRE_SIGNAL_LOGGING_ACTIVE = false;
 
-  public FileRecorder m_fileRecorder = new FileRecorder("NoteData", NOTE_LOGGING_ACTIVE);
-  public InnerArmSubsystem m_innerArmSubsystem = new InnerArmSubsystem(()-> getCurrentStateName(),
-                                                                       ()-> getCurrentSeqNo(),
-                                                                       m_fileRecorder);
-  public IntakeSubsystem   m_intakeSubsystem  = new IntakeSubsystem(()-> getCurrentStateName(),
-                                                                    ()-> getCurrentSeqNo(),
-                                                                    m_fileRecorder);
-  public ShooterSubsystem  m_shooterSubsystem = new ShooterSubsystem(()-> getCurrentStateName(),
-                                                                     ()-> getCurrentSeqNo(),
-                                                                     m_fileRecorder);
+  public FileRecorder      m_fileRecorder;
+  public InnerArmSubsystem m_innerArmSubsystem;
+  public IntakeSubsystem   m_intakeSubsystem;
+  public ShooterSubsystem  m_shooterSubsystem;;
 
   // Local motors and sensors 
   private TalonFX m_masterArmMotor = new TalonFX(MAC.MASTER_ARM_FALCON_ID, Constants.CANIVORE_BUS_NAME);
@@ -129,7 +124,8 @@ public class MasterArmSubsystem extends SubsystemBase {
 
   private boolean m_isSafeToReturn;
   private boolean m_noWaitToScore;
-  private boolean m_armsAreReadyToShoot;
+  private boolean m_masterArmIsReadyToShoot;
+  private boolean m_innerArmIsReadyToShoot;
 
   /******************************************************
    * Constructor for a new MasterArmSubsystem. 
@@ -138,6 +134,17 @@ public class MasterArmSubsystem extends SubsystemBase {
     if (CTRE_SIGNAL_LOGGING_ACTIVE) {
       Robot.startCtreSignalLogger();
     }
+    System.out.println("Starting File Recorder");
+    m_fileRecorder = new FileRecorder("NoteData1", NOTE_LOGGING_ACTIVE);
+    m_innerArmSubsystem = new InnerArmSubsystem(()-> getCurrentStateName(),
+                                                ()-> getCurrentSeqNo(),
+                                                m_fileRecorder);
+    m_intakeSubsystem  = new IntakeSubsystem(()-> getCurrentStateName(),
+                                             ()-> getCurrentSeqNo(),
+                                             m_fileRecorder);
+    m_shooterSubsystem = new ShooterSubsystem(()-> getCurrentStateName(),
+                                              ()-> getCurrentSeqNo(),
+                                              m_fileRecorder);
 
     configAbsMasterArmCANCoder();
     configMasterArmMotor();
@@ -278,6 +285,10 @@ public class MasterArmSubsystem extends SubsystemBase {
       new RumbleCmd(2, .5, 400).schedule();
       System.out.println("ScoreNote @ NST State = "+m_nowPlaying.toString());
     }
+  }
+
+  public void teleopStart() {
+    m_shooterSubsystem.cancelShooter();
   }
 
   public void discardNote() {
@@ -535,6 +546,18 @@ public class MasterArmSubsystem extends SubsystemBase {
     } else {
       m_innerArmSubsystem.adjustInnerArmSetpoint(direction, DEBUG_ON);
     }
+  }
+
+  public void adjustShooterAimUp() {
+    adjustShooterAim(1.0);
+  }
+
+  public void adjustShooterAimDown() {
+    adjustShooterAim(-1.0);
+  }
+
+  public void adjustShooterAim(double direction) {
+    m_shooterSubsystem.adjustShooterAim(direction);
   }
 
   /********************************************************************************
@@ -1089,6 +1112,8 @@ public class MasterArmSubsystem extends SubsystemBase {
         } else {
           gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);
         }
+        m_masterArmIsReadyToShoot = false;
+        m_innerArmIsReadyToShoot = false;
         changeSeqNoTo(2);
         m_startTime = System.currentTimeMillis();
         break;
@@ -1099,18 +1124,34 @@ public class MasterArmSubsystem extends SubsystemBase {
         // infinite hangups during a match, but just in case check for a 2 sec 
         // master timeout in this seqNo.
         if (m_isDistantSpeakerShot) {
-          m_armsAreReadyToShoot = m_innerArmSubsystem.innerArmIsAtDistantSpeakerPos()
-                                  &&
-                                  isMasterArmAt(MAC.DISTANT_SPEAKER_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE);
+          if (! m_masterArmIsReadyToShoot) {
+            if (isMasterArmAt(MAC.DISTANT_SPEAKER_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
+              m_masterArmIsReadyToShoot = true;
+            }
+            if (! m_innerArmIsReadyToShoot) {
+              if (m_innerArmSubsystem.innerArmIsAtDistantSpeakerPos()) {
+                m_innerArmIsReadyToShoot = true;
+              }
+            }
+          }
         } else {
-          m_armsAreReadyToShoot = m_innerArmSubsystem.innerArmIsAtIndexedSpeakerPos()
-                                  &&
-                                  isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE);
+          if (! m_masterArmIsReadyToShoot) {
+            if (isMasterArmAt(MAC.INDEXED_SPEAKER_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
+              m_masterArmIsReadyToShoot = true;
+            }
+            if (! m_innerArmIsReadyToShoot) {
+              if (m_innerArmSubsystem.innerArmIsAtIndexedSpeakerPos()) {
+                m_innerArmIsReadyToShoot = true;
+              }
+            }
+          }
         }
         m_elapsedTime = System.currentTimeMillis() - m_startTime;
-        if ((m_shooterSubsystem.isReadyToShoot() && m_armsAreReadyToShoot)
-            ||
-            (m_elapsedTime > 2000)) {
+        if ((m_elapsedTime > 2000) || (m_shooterSubsystem.isReadyToShoot() 
+                                       && 
+                                       m_masterArmIsReadyToShoot 
+                                       && 
+                                       m_innerArmIsReadyToShoot)) {
           if (m_noWaitToScore) {
             changeNoteStateTo(Repetoire.SCORE_SPEAKER); 
           } else {
@@ -1159,7 +1200,11 @@ public class MasterArmSubsystem extends SubsystemBase {
           gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);
           m_innerArmSubsystem.gotoVerticalUpPos();
           changeNoteStateTo(Repetoire.NOTE_HANDLER_IDLE);
-          m_shooterSubsystem.cancelShooter();
+          if (RobotState.isAutonomous()) {
+            //leaves shooter running throughout autonomous
+          } else {
+            m_shooterSubsystem.cancelShooter();
+           }
         }
         break;
 

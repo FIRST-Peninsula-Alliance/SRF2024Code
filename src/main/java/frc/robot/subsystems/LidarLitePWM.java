@@ -3,12 +3,14 @@ package frc.robot.subsystems;
 import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.wpilibj.Counter;
 import edu.wpi.first.wpilibj.DigitalSource;
+// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class LidarLitePWM {
 	private Counter	 		m_counter;
 	private int		 		m_printedWarningCount = 5;
 	private	double	 		m_cm;
 	private MedianFilter	m_filter;
+	private double          m_rawCM;
 
 	/*********************************************************************************
 	 * Constructor:
@@ -44,7 +46,10 @@ public class LidarLitePWM {
 		// getPeriod returns time in seconds, of type double. The hardware resolution 
 		// is microseconds.  The LIDAR-Lite unit sends a high signal for 10 microseconds 
 		// per cm of distance, so to get cm multiply by (1000000 / 10), or 100000.
-		m_cm = m_filter.calculate(m_counter.getPeriod() * 100000.0);
+		m_rawCM = m_counter.getPeriod() * 100000.0;
+		m_cm = m_filter.calculate(m_rawCM);
+		//SmartDashboard.putNumber("Lidar Raw Distance ", m_rawCM);
+		//SmartDashboard.putNumber("Lidar Filtered Distance ", m_cm);
 		return m_cm;
 	}
 }

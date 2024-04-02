@@ -20,6 +20,7 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.util.FileRecorder;
@@ -47,11 +48,15 @@ public class ShooterSubsystem extends SubsystemBase {
   private double m_shooterTargetVel;
   private double m_aimTargetPos;
   private boolean m_isFarShot;
-  private long m_startTime;       // can share between Aim and Shooter, because they
-                                  // are logically synced
-  private long  m_elapsedTime;
-  private double m_velocityError;
+  private long m_startTime;       // can share between Aim and Shooter, because they are logically synced
+  private long m_elapsedTime;
 
+  private long m_autoStartTime;
+  private int m_autoShotNumber;
+  private boolean m_aimIsReady = false;
+  private double m_aimAbsPosError;
+  private boolean m_shooterWheelsUpToSpeed = false;
+    
   private VoltageOut m_shooterRequest = new VoltageOut(SC.SHOOTER_VOLTAGE_OUT_NEAR)
                                                        .withEnableFOC(true)
                                                        .withUpdateFreqHz(50); 
@@ -66,8 +71,12 @@ public class ShooterSubsystem extends SubsystemBase {
   private ShooterState m_shooterStatus;
   private Supplier<String> m_currentStateName;
   private IntSupplier m_currentSeqNo;
+
+  private double m_statorCurrent;
+  private double m_maxStatorCurrent = 0;
+
   private FileRecorder m_fileRecorder;
-  private static boolean LOGGING_ACTIVE = FileRecorder.isFileRecorderAvail();
+  private boolean LOGGING_ACTIVE;
 
   public ShooterSubsystem(Supplier<String> currentStateName, 
                          IntSupplier currentSeqNo,
@@ -75,13 +84,14 @@ public class ShooterSubsystem extends SubsystemBase {
     m_currentStateName = currentStateName;
     m_currentSeqNo = currentSeqNo;
     m_fileRecorder = fileRecorder;
+    LOGGING_ACTIVE = m_fileRecorder.isFileRecorderAvail();
   
     configShooterMotor();
     configAimingMotor();
 
     m_shooterVoltageOut = SC.SHOOTER_VOLTAGE_OUT_NEAR;
     m_isFarShot = false;
-
+    m_autoStartTime = 0;
     m_shooterStatus = ShooterState.IDLE;
     // m_aimController.setReference(-(SC.MAX_AIM_POSITION+2), CANSparkMax.ControlType.kPosition);
     // m_startTime = System.currentTimeMillis();
@@ -90,6 +100,12 @@ public class ShooterSubsystem extends SubsystemBase {
   /***********************************************************************
    * Methods called from MasterArm Conductor to synchronize note handlers
    * ********************************************************************/
+
+   public void adjustShooterAim(double direction) {
+    m_aimTargetPos += direction;
+    m_aimController.setReference(m_aimTargetPos, CANSparkMax.ControlType.kPosition);
+    //System.out.println("Shooter aim adjusted to "+m_aimTargetPos+" rotations");
+   }
   
    // Set shooter speed and aim in prep for a shot
   public void prepareToShoot(boolean isFarShot) {
@@ -103,16 +119,22 @@ public class ShooterSubsystem extends SubsystemBase {
       m_shooterTargetVel = SC.SHOOTER_VELOCITY_NEAR;
       m_shooterVoltageOut = SC.SHOOTER_VOLTAGE_OUT_NEAR;     
     }
+    if (m_autoStartTime == 0) {
+      m_autoStartTime = System.currentTimeMillis();
+      System.out.println("Shooter Auto # 1 shot triggered at "+m_autoStartTime);
+      m_autoShotNumber = 1;
+    }
+    m_aimIsReady = false;
+    m_shooterWheelsUpToSpeed = false;
     m_shooterMotor.setControl(m_shooterRequest.withOutput(m_shooterVoltageOut));
     m_aimController.setReference(m_aimTargetPos, CANSparkMax.ControlType.kPosition);
     m_shooterStatus = ShooterState.PREPPING_TO_SHOOT;
     m_startTime = System.currentTimeMillis();
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordShooterEvent(NoteRequest.SHOOTER_PREP,
-                                        m_startTime,
                                         m_shooterTargetVel,
-                                        m_shooterVoltageOut,
                                         m_aimTargetPos,
+                                        m_startTime,
                                         m_currentStateName.get(),
                                         m_currentSeqNo.getAsInt());
     }
@@ -132,12 +154,14 @@ public class ShooterSubsystem extends SubsystemBase {
     // shot Amperage measurement, and a deterministic overall timeout for
     // completeion of a shot, so that the shooter motor can be stopped.
     m_startTime = System.currentTimeMillis();
+    if (RobotState.isAutonomous()) {
+      System.out.println("Auto shot # "+m_autoShotNumber+" final trigger at "+m_startTime+" ms");
+    }
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordShooterEvent(NoteRequest.SHOOTER_SCORE,
-                                        m_startTime,
                                         m_shooterTargetVel,
-                                        m_shooterVoltageOut,
                                         m_aimTargetPos,
+                                        m_startTime,
                                         m_currentStateName.get(),
                                         m_currentSeqNo.getAsInt());
     }
@@ -147,10 +171,9 @@ public class ShooterSubsystem extends SubsystemBase {
   public boolean isShotDetected() {
     // The periodic method will change the ShooterState to SHOT_DETECTED 
     // after the Amperage spike that occurs upon a shot 
-    // (which may be erroneously triggered by the inrush current, so a filter 
-    // for that is needed. Do not look until after an initial measurement 
-    // lockout period). 
-    // If no shot is detected then there is no time out, so MasterArmSubsystem 
+    // (which may be erroneously triggered by the inrush current, so 
+    // do not look at current until after the call to shotInitiated() 
+    // If no shot is detected then there is a 700 ms time out, and MasterArmSubsystem 
     // has its own timeout to ensure the shooter motor is stopped.
     // But the amperage test is still useful - it allows faster response (when it works).
     return (m_shooterStatus == ShooterState.SHOT_DETECTED);
@@ -161,15 +184,20 @@ public class ShooterSubsystem extends SubsystemBase {
     // The shooter waits for the MasterArmSystem to tell it to
     // stop, which will generally be governed by the intakeSubsystem
     // timing out after the call to eject.
-    m_shooterMotor.setControl(m_shooterRequest.withOutput(0.0));
-    m_aimController.setReference(SC.AIM_POSITION_NEAR_SHOT, CANSparkMax.ControlType.kPosition);
+    // However, in Automomous, the shooter never actually shutss down, speeding
+    // up response times. MasterArmSubsystem always calls cancelShooter()
+    // upon teleopInit, ensuring that the shooter will be put to Idle
+    // when Autonomous ends.
+    if (! RobotState.isAutonomous()) {
+      m_shooterMotor.setControl(m_shooterRequest.withOutput(0.0));
+      m_aimController.setReference(SC.AIM_POSITION_NEAR_SHOT, CANSparkMax.ControlType.kPosition);
+    }
     m_shooterStatus = ShooterState.IDLE;
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordShooterEvent(NoteRequest.CANCEL_SHOT,
-                                        System.currentTimeMillis(),
                                         m_shooterTargetVel,
-                                        m_shooterVoltageOut,
                                         m_aimTargetPos,
+                                        System.currentTimeMillis(),
                                         m_currentStateName.get(),
                                         m_currentSeqNo.getAsInt());
     }
@@ -238,7 +266,8 @@ public class ShooterSubsystem extends SubsystemBase {
   public void publishShooterData() {
     SmartDashboard.putString("ShooterState ", m_shooterStatus.toString());
     SmartDashboard.putNumber("Aim sensor position ", m_integratedAimEncoder.getPosition());
-    SmartDashboard.putNumber("Shooter Voltage Out ",  m_shooterVoltageOut);
+    //SmartDashboard.putNumber("Aim motor current ", m_aimMotor.getOutputCurrent());
+    //SmartDashboard.putNumber("Shooter Voltage Out ",  m_shooterVoltageOut);
     SmartDashboard.putNumber("Shooter Velocity RPS ",  m_shooterMotor.getVelocity().getValueAsDouble());
   }
 
@@ -260,67 +289,107 @@ public class ShooterSubsystem extends SubsystemBase {
             m_fileRecorder.recordMoveEvent( "Shooter, ",
                                             NoteEvent.TIMEOUT_OCCURED,
                                             m_shooterTargetVel,
-                                            m_velocityError,
+                                            m_shooterMotor.getVelocity().getValueAsDouble(),
                                             System.currentTimeMillis(),
                                             m_elapsedTime,
                                             m_currentStateName.get(),
                                             m_currentSeqNo.getAsInt());
           }
           m_shooterStatus = ShooterState.WAITING_FOR_SHOT;
+          if (RobotState.isAutonomous()) {
+            System.out.println("Shooter prep timeout after 700 ms");
+          }
           break;
         }
 
-        if ((Math.abs(m_integratedAimEncoder.getPosition() - m_aimTargetPos) <= SC.ALLOWED_SHOOTER_AIM_ERROR)
-            && 
-            (m_shooterMotor.getVelocity().getValueAsDouble() > m_shooterTargetVel)) {
+        if (! m_aimIsReady) {
+          m_aimAbsPosError = Math.abs(m_integratedAimEncoder.getPosition() - m_aimTargetPos);
+          if (m_aimAbsPosError <= SC.ALLOWED_SHOOTER_AIM_ERROR) {
+            m_aimIsReady = true;
+            if (LOGGING_ACTIVE) {
+              m_fileRecorder.recordMoveEvent( "Aim ",
+                                  NoteEvent.SETPOINT_REACHED,
+                                  m_aimTargetPos,
+                                  m_aimTargetPos - m_integratedAimEncoder.getPosition(),
+                                  System.currentTimeMillis(),
+                                  m_elapsedTime,
+                                  m_currentStateName.get(),
+                                  m_currentSeqNo.getAsInt());
+            }
+            if (RobotState.isAutonomous()) {
+              System.out.println("Aim took "+m_elapsedTime+" ms to prep for auto shot # "+m_autoShotNumber);
+            }
+          }
+        }
+        if (! m_shooterWheelsUpToSpeed) {
+          if (m_shooterMotor.getVelocity().getValueAsDouble() > m_shooterTargetVel) {
+            m_shooterWheelsUpToSpeed = true;
+            if (LOGGING_ACTIVE) {
+              m_fileRecorder.recordMoveEvent( "Shot Wheels ",
+                                  NoteEvent.SETPOINT_REACHED,
+                                  m_shooterTargetVel,
+                                  m_shooterMotor.getVelocity().getValueAsDouble() - m_shooterTargetVel,
+                                  System.currentTimeMillis(),
+                                  m_elapsedTime,
+                                  m_currentStateName.get(),
+                                  m_currentSeqNo.getAsInt());
+            }
+            if (RobotState.isAutonomous()) {
+              System.out.println("Wheels took "+m_elapsedTime+" ms to prep for auto shot # "+m_autoShotNumber);
+            }
+          }
+        }
+        if (m_aimIsReady && m_shooterWheelsUpToSpeed) {
           m_shooterStatus = ShooterState.WAITING_FOR_SHOT;
           new RumbleCmd(2, .5, 200).schedule();
-          if (LOGGING_ACTIVE) {
-            m_fileRecorder.recordMoveEvent( "Shooter, ",
-                                            NoteEvent.SETPOINT_REACHED,
-                                            m_shooterMotor.getVelocity().getValueAsDouble(),
-                                            m_integratedAimEncoder.getPosition(),
-                                            System.currentTimeMillis(),
-                                            m_elapsedTime,
-                                            m_currentStateName.get(),
-                                            m_currentSeqNo.getAsInt());
-          }
         }
         break;
 
       case WAITING_FOR_SHOT:
         // Look for current spike and set ShooterState to SHOT_DETECTED if found
         m_elapsedTime = System.currentTimeMillis() - m_startTime;
-        if (m_shooterMotor.getSupplyCurrent().getValueAsDouble()
-            >
-            SC.AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION) {
+        m_statorCurrent = m_shooterMotor.getStatorCurrent().getValueAsDouble();
+        if (m_statorCurrent > m_maxStatorCurrent) {
+          m_maxStatorCurrent = m_statorCurrent;
+        }
+        if (m_statorCurrent >= SC.AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION) {
           if (LOGGING_ACTIVE) {
-            m_fileRecorder.recordMoveEvent( "Shooter, ",
+            m_fileRecorder.recordMoveEvent( "Shot ",
                                             NoteEvent.SHOT_DETECTED,
-                                            m_shooterMotor.getVelocity().getValueAsDouble(),
-                                            m_shooterMotor.getSupplyCurrent().getValueAsDouble(),
+                                            m_statorCurrent,
+                                            m_maxStatorCurrent,
                                             System.currentTimeMillis(),
                                             m_elapsedTime,
                                             m_currentStateName.get(),
                                             m_currentSeqNo.getAsInt());
           }
           m_shooterStatus = ShooterState.SHOT_DETECTED;
+          if (RobotState.isAutonomous()) {
+            System.out.println("Shot # "+m_autoShotNumber+" detected "+m_elapsedTime+" ms after final trigger");
+            m_autoShotNumber++;
+          }
         } else if (m_elapsedTime > 700) {
           if (LOGGING_ACTIVE) {
-            m_fileRecorder.recordMoveEvent( "Shooter (wait for shot), ",
+            m_fileRecorder.recordMoveEvent( "Shot (waiting) ",
                                             NoteEvent.TIMEOUT_OCCURED,
-                                            SC.AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION,
-                                            m_shooterMotor.getSupplyCurrent().getValueAsDouble(),
+                                            m_statorCurrent,
+                                            m_maxStatorCurrent,
                                             System.currentTimeMillis(),
                                             m_elapsedTime,
                                             m_currentStateName.get(),
                                             m_currentSeqNo.getAsInt());
           }
           m_shooterStatus = ShooterState.SHOT_DETECTED;     // timeout occured, so just pretend spike happened
+          if (RobotState.isAutonomous()) {
+            System.out.println("Auto Shot # "+m_autoShotNumber+" not detected before Timeout of "+m_elapsedTime+" ms after final trigger");
+            m_autoShotNumber++;
+          }
         }
         break;
 
       case INITIALIZING_AIM_MOTOR:
+        // Not used!
+        /*
         // Aim encoder is the integrated NEO550 rotor, so is not absolute. The plan was to use the hardware stop
         // designed into the aiming mechanism to create a current spike (via starting the aim motor on power up),
         // which event was to be used to initialize the intergrated encoder zero value, regardless of where the 
@@ -343,6 +412,7 @@ public class ShooterSubsystem extends SubsystemBase {
           // And change the shooter state to IDLE
           m_shooterStatus = ShooterState.IDLE;
         }
+        */
         break;
 
       case SHOT_DETECTED:     // Nothing to do. MasterArmSubsystem will call cancelShooter() when appropriate
@@ -351,4 +421,3 @@ public class ShooterSubsystem extends SubsystemBase {
     }
   }
 }
-

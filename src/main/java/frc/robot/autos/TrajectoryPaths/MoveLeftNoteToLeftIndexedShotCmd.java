@@ -37,17 +37,17 @@ public class MoveLeftNoteToLeftIndexedShotCmd extends SequentialCommandGroup {
     Trajectory moveLeftNoteToLeftIndexedShot =
       TrajectoryGenerator.generateTrajectory(
           // Start at the end Pose2d of the MoveSpkrRightToLeftNote trajectory
-          new Pose2d(Units.inchesToMeters(120.0), 
-                     Units.inchesToMeters(114.0), 
-                     Rotation2d.fromDegrees(0.0)),
-          List.of(new Translation2d(Units.inchesToMeters(119.0), 
-                                    Units.inchesToMeters(115.0)),
-                  new Translation2d(Units.inchesToMeters(80.0), 
-                                    Units.inchesToMeters(118.0)),
-                  new Translation2d(Units.inchesToMeters(42.0), 
-                                    Units.inchesToMeters(121.0))),
-          new Pose2d(Units.inchesToMeters(41.0),
-                     Units.inchesToMeters(122.0),
+          new Pose2d(Units.inchesToMeters(108.0), 
+                     Units.inchesToMeters(140.0), 
+                     Rotation2d.fromDegrees(7.0)),
+          List.of(new Translation2d(Units.inchesToMeters(107.0), 
+                                    Units.inchesToMeters(139.0)),
+                  new Translation2d(Units.inchesToMeters(70.0), 
+                                    Units.inchesToMeters(134.0)),
+                  new Translation2d(Units.inchesToMeters(36.0), 
+                                    Units.inchesToMeters(127.0))),
+          new Pose2d(Units.inchesToMeters(38.0),
+                     Units.inchesToMeters(125.0),
                      Rotation2d.fromDegrees(60.0)),
           moveConfig);
 

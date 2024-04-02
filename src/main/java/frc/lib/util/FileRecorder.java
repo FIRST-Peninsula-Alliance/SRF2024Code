@@ -49,7 +49,9 @@ public class FileRecorder {
     private static FileWriter m_fileWriter;
     private BufferedWriter m_bufferedWriter;
     private String m_pathName;
-    private static boolean NOTE_LOGGING_ACTIVE;
+    private String m_stringBuf;
+    private String m_separator = ", ";
+    private boolean NOTE_LOGGING_ACTIVE;
 
     public FileRecorder(String filename, boolean isFileRecorderActive) {
         m_pathName = "/U/"+filename+".txt";
@@ -57,10 +59,15 @@ public class FileRecorder {
             try {
                 m_fileWriter = new FileWriter(m_pathName, false);   // Overwrite existing file
                 m_bufferedWriter = new BufferedWriter(m_fileWriter);
+                System.out.println("File Recorder successfully started");
+                m_stringBuf = "Record Type, Request, Curr SP, SP Err, Time, Elapsed Time, Curr State, New State, SeqNo, New SeqNo";
+                m_bufferedWriter.write(m_stringBuf);
+                m_bufferedWriter.newLine();
             } catch (IOException e) {
                 m_bufferedWriter = null;
                 m_fileWriter = null;
                 isFileRecorderActive = false;
+                System.out.println("File Recorder Open of "+m_pathName+" Failed");
             }
         } else {
             m_bufferedWriter = null;
@@ -69,7 +76,7 @@ public class FileRecorder {
         NOTE_LOGGING_ACTIVE = isFileRecorderActive;
     }
      
-    public static boolean isFileRecorderAvail() {
+    public boolean isFileRecorderAvail() {
         return NOTE_LOGGING_ACTIVE;
     }
 
@@ -84,16 +91,17 @@ public class FileRecorder {
         if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write( caller+" Move: "+
-                                        eventType.toString()+", "+
-                                        F.df4.format(setpoint)+", "+
-                                        F.df4.format(positionError)+", "+
-                                        F.df80.format(relTimeMillis)+", "+
-                                        F.df40.format(elapsedTime)+", "+
-                                        state+", "+
+                                        eventType.toString()+m_separator+
+                                        F.df4.format(setpoint)+m_separator+
+                                        F.df4.format(positionError)+m_separator+
+                                        F.df80.format(relTimeMillis)+m_separator+
+                                        F.df40.format(elapsedTime)+m_separator+
+                                        state+m_separator+m_separator+
                                         F.df20.format(seqNo) );
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
                 closeFileRecorder();
+                System.out.println("FR RecordMoveEvent Failed");
             }
         }
     }
@@ -106,15 +114,16 @@ public class FileRecorder {
                                int seqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write(caller+", "+
-                                       requestType.toString()+", "+
-                                       F.df4.format(setpoint)+", "+
-                                       F.df80.format(startTimeMillis)+", "+
-                                       state+", "+
+                m_bufferedWriter.write(caller+m_separator+
+                                       requestType.toString()+m_separator+
+                                       F.df4.format(setpoint)+m_separator+m_separator+
+                                       F.df80.format(startTimeMillis)+m_separator+
+                                       state+m_separator+m_separator+
                                        F.df20.format(seqNo));
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
                 closeFileRecorder();
+                System.out.println("FR recordReqEvent failed");
             }
         }
     }
@@ -125,36 +134,37 @@ public class FileRecorder {
                                   int seqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write(requestType.toString()+", "+
-                                       F.df80.format(startTimeMillis)+", "+
-                                       state+", "+
+                m_bufferedWriter.write(requestType.toString()+m_separator+
+                                       m_separator+m_separator+m_separator+ 
+                                       F.df80.format(startTimeMillis)+m_separator+
+                                       state+m_separator+m_separator+
                                        F.df20.format(seqNo));
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
                 closeFileRecorder();
+                System.out.println("FR recordIntakeEvent failed");
             }
         }
     }
 
     public void recordShooterEvent( NoteRequest requestType,
-                                    long startTimeMillis,
                                     double shooterRPS,
-                                    double motorVoltage,
                                     double aimSetpoint,
+                                    long startTimeMillis,
                                     String currentState,
                                     int currentSeqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write(requestType.toString()+", "+
-                                       F.df80.format(startTimeMillis)+", "+
-                                       F.df4.format(shooterRPS)+", "+
-                                       F.df4.format(motorVoltage)+", "+
-                                       F.df4.format(aimSetpoint)+", "+
-                                       currentState+", "+
+                m_bufferedWriter.write(requestType.toString()+m_separator+m_separator+
+                                       F.df4.format(shooterRPS)+m_separator+
+                                       F.df4.format(aimSetpoint)+m_separator+
+                                       F.df80.format(startTimeMillis)+m_separator+
+                                       currentState+m_separator+m_separator+
                                        F.df20.format(currentSeqNo));
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
                 closeFileRecorder();
+                System.out.println("FR recordShooterEventfailed");
             }
         }
     };
@@ -165,14 +175,16 @@ public class FileRecorder {
                                   int currentSeqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write( NoteEvent.STATE_CHANGE.toString()+", "+
-                                        F.df80.format(relTimeMillis)+", "+
-                                        oldState+", "+
-                                        newState+", "+
+                m_bufferedWriter.write( NoteEvent.STATE_CHANGE.toString()+m_separator+
+                                        m_separator+m_separator+
+                                        F.df80.format(relTimeMillis)+m_separator+
+                                        oldState+m_separator+
+                                        newState+m_separator+
                                         F.df2.format(currentSeqNo));
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
                 closeFileRecorder();
+                System.out.println("FR recordStateChange failed");
             }
         }
     }
@@ -183,13 +195,16 @@ public class FileRecorder {
                                   int newSeqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write( NoteEvent.SEQ_NO_CHANGE.toString()+","+
-                                        F.df80.format(relTimeMillis)+", "+
-                                        F.df20.format(oldSeqNo)+", "+
+                m_bufferedWriter.write( NoteEvent.SEQ_NO_CHANGE.toString()+m_separator+
+                                        m_separator+m_separator+m_separator+
+                                        F.df80.format(relTimeMillis)+m_separator+
+                                        State+m_separator+m_separator+
+                                        F.df20.format(oldSeqNo)+m_separator+
                                         F.df20.format(newSeqNo));
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
                 closeFileRecorder();
+                System.out.println("FR recordSeqNoCHange failed");
             }
         }
     }
@@ -199,7 +214,9 @@ public class FileRecorder {
             try {
                 m_bufferedWriter.flush();
                 m_bufferedWriter.close();
+                System.out.println("File Recorder successfully closed");
             } catch (Exception e) {
+                System.out.println("FR Close failed");
                 // Ignore any exception - closing file anyway.
             }
         }

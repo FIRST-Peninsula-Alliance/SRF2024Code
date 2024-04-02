@@ -36,6 +36,7 @@ public class ScoreIndexedSpeakerCmd extends Command {
       // the teleop "ready to shoot" rumble on the gameController.
       if ((System.currentTimeMillis() - m_startTime) > 300) {
         m_noteConductor.scoreNote();
+        m_readyToScore = false;
       }
     } else if (m_noteConductor.isReadyToScoreSpeaker()) {
       m_readyToScore = true;

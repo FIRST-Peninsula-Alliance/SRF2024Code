@@ -67,7 +67,7 @@ public class InnerArmSubsystem extends SubsystemBase {
   private double m_positionError;
   private long m_elapsedTime;
   private FileRecorder m_fileRecorder;
-  private static boolean LOGGING_ACTIVE = FileRecorder.isFileRecorderAvail();
+  private boolean LOGGING_ACTIVE;
  
   /** Creates a new InnerArmSubsystem. */
   public InnerArmSubsystem(Supplier<String> currentStateName, 
@@ -76,6 +76,7 @@ public class InnerArmSubsystem extends SubsystemBase {
     m_currentStateName = currentStateName;
     m_currentSeqNo = currentSeqNo;
     m_fileRecorder = fileRecorder;
+    LOGGING_ACTIVE = m_fileRecorder.isFileRecorderAvail();
     configInnerArmCANcoder();
     configInnerArmMotor();
     setupInnerArmPublishing();

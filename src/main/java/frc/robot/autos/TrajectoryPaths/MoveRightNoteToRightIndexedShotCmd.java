@@ -37,18 +37,18 @@ public class MoveRightNoteToRightIndexedShotCmd extends SequentialCommandGroup {
     Trajectory moveRightNoteToRightIndexedShot =
       TrajectoryGenerator.generateTrajectory(
           // Start at the end Pose2d of the MoveSpkrRightToRightNote trajectory
-          new Pose2d(Units.inchesToMeters(120.0), 
-                     Units.inchesToMeters(0.0), 
+          new Pose2d(Units.inchesToMeters(108.0), 
+                     Units.inchesToMeters(-22.0), 
                      Rotation2d.fromDegrees(0.0)),
-          List.of(new Translation2d(Units.inchesToMeters(119.0), 
-                                    Units.inchesToMeters(-1.0)),
+          List.of(new Translation2d(Units.inchesToMeters(107.0), 
+                                    Units.inchesToMeters(-21.0)),
                   new Translation2d(Units.inchesToMeters(80.0), 
-                                    Units.inchesToMeters(-4.0)),
+                                    Units.inchesToMeters(-13.0)),
                   new Translation2d(Units.inchesToMeters(42.0), 
                                     Units.inchesToMeters(-7.0))),
-          new Pose2d(Units.inchesToMeters(41.0),
-                     Units.inchesToMeters(-8.0),
-                     Rotation2d.fromDegrees(300.0)),
+          new Pose2d(Units.inchesToMeters(31.0),
+                     Units.inchesToMeters(0.0),
+                     Rotation2d.fromDegrees(303.0)),
           moveConfig);
 
     ProfiledPIDController thetaController = new ProfiledPIDController(AutoC.KP_THETA_CONTROLLER,

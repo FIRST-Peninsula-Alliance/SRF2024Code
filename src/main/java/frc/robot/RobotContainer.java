@@ -39,7 +39,7 @@ public class RobotContainer {
     private Score2NotesLeftAuto         m_score2NotesLeftAuto;
     private Score2NotesCenterAuto       m_score2NotesCenterAuto;
     private Score2NotesRightAuto        m_score2NotesRightAuto;
-
+    private ScoreMultipleNotesCenterAuto m_scoreMultipleNotesCenAuto;
 
     // Create sendable choosers for starting position and desired Auto routine
     private static SendableChooser<Command> m_autoRoutineChooser = new SendableChooser<>();
@@ -84,6 +84,8 @@ public class RobotContainer {
         m_justScoreLeftAuto             = new JustScoreLeftAuto(m_masterArmSubsystem);
         m_justScoreCenterAuto           = new JustScoreCenterAuto(m_masterArmSubsystem);
         m_justScoreRightAuto            = new JustScoreRightAuto(m_masterArmSubsystem);
+        m_scoreMultipleNotesCenAuto     = new ScoreMultipleNotesCenterAuto(m_masterArmSubsystem,
+                                                                           m_swerveSubsystem);
 
         m_autoRoutineChooser.setDefaultOption("Score 2 Notes Center", m_score2NotesCenterAuto);
         m_autoRoutineChooser.addOption("Score 2 Notes Left", m_score2NotesLeftAuto);
@@ -95,6 +97,7 @@ public class RobotContainer {
         m_autoRoutineChooser.addOption("Score Left, BLUE exit", m_scoreThenExitBlueLeftAuto);
         m_autoRoutineChooser.addOption("Score Right, RED exit", m_scoreThenExitRedRightAuto);
         m_autoRoutineChooser.addOption("Score Right, BLUE exit", m_scoreThenExitBlueRightAuto);
+        m_autoRoutineChooser.addOption("Score Multiple Center", m_scoreMultipleNotesCenAuto);
         SmartDashboard.putData("Autonomous Selection:", m_autoRoutineChooser);
 
         configureButtonBindings();
@@ -202,6 +205,7 @@ public class RobotContainer {
         ALT.and(m_xbox.povDown()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopElevator()));
         ALT.and(m_xbox.leftTrigger()).onTrue(new InstantCommand(()-> m_climbSubsystem.runClimbWinch()));
         ALT.and(m_xbox.leftTrigger()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopClimbWinch()));
+
     }
 
     /*
@@ -238,5 +242,9 @@ public class RobotContainer {
             m_swerveSubsystem.setGyro(300.0);
         } 
         return selectedAuto;
+    }
+
+    public void teleopStart() {
+        m_masterArmSubsystem.teleopStart();
     }
 }

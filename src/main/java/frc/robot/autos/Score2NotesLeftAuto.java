@@ -11,7 +11,6 @@ import frc.robot.autos.TrajectoryPaths.MoveSpkrLeftToLeftNoteCmd;
 import frc.robot.commands.DeployIntakeCmd;
 import frc.robot.commands.RetrieveIntakeCmd;
 import frc.robot.commands.ScoreIndexedSpeakerCmd;
-
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 
@@ -25,6 +24,7 @@ public class Score2NotesLeftAuto extends SequentialCommandGroup {
                 new DeployIntakeCmd(noteConductor),
                 new MoveSpkrLeftToLeftNoteCmd(swerveDrive),
                 // Assume we picked up note, but add a short wait to correct any misallignment
+                
                 new WaitCommand(1.0),
                 new RetrieveIntakeCmd(noteConductor),
                 // For 2 note auto, back up to speaker, then score indexed shot

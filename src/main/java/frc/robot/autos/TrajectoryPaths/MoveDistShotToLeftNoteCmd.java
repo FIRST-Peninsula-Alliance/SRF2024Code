@@ -42,16 +42,16 @@ public class MoveDistShotToLeftNoteCmd extends SequentialCommandGroup {
                                  (
                                   new Pose2d(Units.inchesToMeters(112.0), 
                                               Units.inchesToMeters(57.0), 
-                                              Rotation2d.fromDegrees(0.0)),
+                                              Rotation2d.fromDegrees(-10.0)),
                                   List.of(new Translation2d(Units.inchesToMeters(113.0), 
                                                             Units.inchesToMeters(58.0)),
-                                          new Translation2d(Units.inchesToMeters(113.0), 
+                                          new Translation2d(Units.inchesToMeters(126.0), 
                                                             Units.inchesToMeters(95.0)),
-                                          new Translation2d(Units.inchesToMeters(113.0), 
+                                          new Translation2d(Units.inchesToMeters(139.0), 
                                                             Units.inchesToMeters(113.0))),
-                                  new Pose2d(Units.inchesToMeters(114.0),
+                                  new Pose2d(Units.inchesToMeters(140.0),
                                               Units.inchesToMeters(114.0),
-                                              Rotation2d.fromDegrees(90.0)),
+                                              Rotation2d.fromDegrees(80.0)),
                                   moveConfig
                                  );
 

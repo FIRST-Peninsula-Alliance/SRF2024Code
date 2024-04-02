@@ -22,18 +22,16 @@ import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
-// This command moves the robot from the Right against the speaker sub-woofer
-// to the Right pre-staged note.
-// Y origin is defined to be at the center of the right most pre-staged note, 
-// regardless of Alliance color. This makes the field symetric RRT Auto
-// routines.
+// This command moves the robot from the Distant Shot Position (center) 
+// to the Right Note for pickup. The robot must turn -90 degrees (CW) 
+// (to 270 deg) while moving.
 
-public class MoveSpkrRightToRightNoteCmd extends SequentialCommandGroup {
-  Trajectory moveSpkrRightToRightNote = null;
-  SwerveControllerCommand moveSpkrRightToRightNoteCmd = null;
+public class MoveCenNoteToRightNoteCmd extends SequentialCommandGroup {
+  Trajectory moveCenNoteToRightNote = null;
+  SwerveControllerCommand moveCenNoteToRightNoteCmd = null;
 
   /* Constructor */
-  public MoveSpkrRightToRightNoteCmd(SwerveSubsystem swerveDrive) {
+  public MoveCenNoteToRightNoteCmd(SwerveSubsystem swerveDrive) {
     TrajectoryConfig moveConfig = new TrajectoryConfig((AutoC.AUTO_MAX_SPEED_M_PER_SEC *
                                                         AutoC.AUTO_SPEED_FACTOR_GENERIC),
                                                         (AutoC.AUTO_MAX_ACCEL_M_PER_SEC2 *
@@ -41,21 +39,20 @@ public class MoveSpkrRightToRightNoteCmd extends SequentialCommandGroup {
                                                         .setKinematics(SDC.SWERVE_KINEMATICS);
     moveConfig.setReversed(false);
 
-    moveSpkrRightToRightNote = TrajectoryGenerator.generateTrajectory
+    moveCenNoteToRightNote = TrajectoryGenerator.generateTrajectory
                                  (
-                                  // Start with rear bumpers up against subwoofer Right side
-                                  new Pose2d(Units.inchesToMeters(41.0), 
-                                              Units.inchesToMeters(-8.0), 
-                                              Rotation2d.fromDegrees(300.0)),
-                                  List.of(new Translation2d(Units.inchesToMeters(42.0), 
-                                                            Units.inchesToMeters(-9.0)),
-                                          new Translation2d(Units.inchesToMeters(68.0), 
-                                                            Units.inchesToMeters(-13.0)),
-                                          new Translation2d(Units.inchesToMeters(107.0), 
-                                                            Units.inchesToMeters(-21.0))),
-                                  new Pose2d(Units.inchesToMeters(108.0),
-                                              Units.inchesToMeters(-22.0),
+                                  new Pose2d(Units.inchesToMeters(120.0), 
+                                              Units.inchesToMeters(57.0), 
                                               Rotation2d.fromDegrees(0.0)),
+                                  List.of(new Translation2d(Units.inchesToMeters(121.0), 
+                                                            Units.inchesToMeters(56.0)),
+                                          new Translation2d(Units.inchesToMeters(136.0), 
+                                                            Units.inchesToMeters(25.0)),
+                                          new Translation2d(Units.inchesToMeters(152.0), 
+                                                            Units.inchesToMeters(6.0))),
+                                  new Pose2d(Units.inchesToMeters(153.0),
+                                              Units.inchesToMeters(5.0),
+                                              Rotation2d.fromDegrees(-80.0)),
                                   moveConfig
                                  );
 
@@ -65,7 +62,7 @@ public class MoveSpkrRightToRightNoteCmd extends SequentialCommandGroup {
                                                                       AutoC.K_THETA_CONTROLLER_CONSTRAINTS);
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-    moveSpkrRightToRightNoteCmd = new SwerveControllerCommand(moveSpkrRightToRightNote,
+    moveCenNoteToRightNoteCmd = new SwerveControllerCommand(moveCenNoteToRightNote,
                                                             swerveDrive::getPose,
                                                             SDC.SWERVE_KINEMATICS,
                                                             new PIDController(AutoC.KP_X_CONTROLLER, 
@@ -78,10 +75,8 @@ public class MoveSpkrRightToRightNoteCmd extends SequentialCommandGroup {
                                                             swerveDrive::setModuleStates,
                                                             swerveDrive);
     addCommands(
-                new InstantCommand(()->swerveDrive.resetOdometry(moveSpkrRightToRightNote.getInitialPose())),
-                moveSpkrRightToRightNoteCmd,
+                moveCenNoteToRightNoteCmd,
                 new InstantCommand(()->swerveDrive.stop())
                );
   }
 }
-

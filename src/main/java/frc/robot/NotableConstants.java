@@ -31,7 +31,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue MASTER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
 
         public static final int MASTER_ARM_ENCODER_ID = 10;
-        public static final double MASTER_ARM_ENCODER_MAGNET_OFFSET = -0.36912;
+        public static final double MASTER_ARM_ENCODER_MAGNET_OFFSET = -0.3679;
         public static final AbsoluteSensorRangeValue MASTER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue MASTER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -47,7 +47,7 @@ public final class NotableConstants {           // As in all these constants are
         // with protective current limits by using a combination of 
         public static final double MASTER_ARM_SUPPLY_CURRENT_LIMIT         = 35.0;
         public static final double MASTER_ARM_SUPPLY_CURRENT_THRESHOLD     = 70.0;
-        public static final double MASTER_ARM_SUPPLY_TIME_THRESHOLD        = 0.35;
+        public static final double MASTER_ARM_SUPPLY_TIME_THRESHOLD        = 0.3;
         public static final boolean MASTER_ARM_ENABLE_CURRENT_LIMIT        = true;
         public static final double MASTER_ARM_STATOR_CURRENT_LIMIT         = 55.0;
         public static final boolean MASTER_ARM_ENABLE_STATOR_CURRENT_LIMIT = true;
@@ -76,7 +76,7 @@ public final class NotableConstants {           // As in all these constants are
 
         // Position units are all in rotations
         public static final double DISTANT_SPEAKER_SHOT_POS     = -0.1925;
-        public static final double INDEXED_SPEAKER_SHOT_POS     = -0.21;
+        public static final double INDEXED_SPEAKER_SHOT_POS     = -0.2076;
         public static final double LOW_SAFE_TO_ROTATE_IN_POS    = -0.2116;
         public static final double LOW_SAFE_TO_ROTATE_OUT_POS   = -0.17;
         public static final double NOTE_PICKUP_POS              = -0.154;
@@ -107,7 +107,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue INNER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
         
         public static final int INNER_ARM_CANCODER_ID = 11;
-        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = -0.41905;
+        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = -0.242625;
         public static final AbsoluteSensorRangeValue INNER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue INNER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -150,10 +150,10 @@ public final class NotableConstants {           // As in all these constants are
         public static final double VERTICAL_DOWN_POS        =  0.25;
         public static final double HORIZONTAL_BACK_POS      = -0.445;   // -.5, but with safer margin of error
 
-        public static final double BUMPER_CONTACT_POS       =  0.12;
-        public static final double NOTE_PICKUP_POS          =  0.13;
-        public static final double DISTANT_SPEAKER_GOAL_POS = -0.35;
-        public static final double INDEXED_SPEAKER_GOAL_POS = -0.335;
+        public static final double BUMPER_CONTACT_POS       =  0.11;
+        public static final double NOTE_PICKUP_POS          =  0.124;
+        public static final double DISTANT_SPEAKER_GOAL_POS = -0.3572;
+        public static final double INDEXED_SPEAKER_GOAL_POS = -0.3428;
         public static final double AMP_GOAL_POS             =  0.041;
 
         public static final double ALLOWED_INNER_ARM_POS_ERROR  = 5.0 / 360.0;
@@ -238,7 +238,7 @@ public final class NotableConstants {           // As in all these constants are
 
         public static final double SHOOTER_OPEN_LOOP_RAMP_PERIOD = 0.2;
         
-        public static final double SHOOTER_VOLTAGE_OUT_NEAR =  9.5;       // volts, use 9.0 for double wheel shooter
+        public static final double SHOOTER_VOLTAGE_OUT_NEAR = 10.0;       // volts, use 9.0 for double wheel shooter
         public static final double SHOOTER_VOLTAGE_OUT_FAR  = 11.5;
         public static final double SHOOTER_VELOCITY_NEAR    = 69.0;       // Estimated - needs measurment
         public static final double SHOOTER_VELOCITY_FAR     = 88.0;       // ditto
@@ -246,7 +246,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final double MIN_SHOOTER_VOLTAGE      =  3.0;
         public static final double MAX_SHOOTER_VOLTAGE      = 12.5;
 
-        public static final double AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION = 40.0;
+        public static final double AMP_THRESHOLD_FOR_NOTE_LAUNCH_DETECTION = 19.0;
 
         // Shooter Aim Motor parameters
         public static final int AIM_NEO550_ID = 14;
@@ -260,12 +260,13 @@ public final class NotableConstants {           // As in all these constants are
         public static final double MIN_AIM_CLOSED_LOOP_OUTPUT = -0.8;
         public static final double MAX_AIM_CLOSED_LOOP_OUTPUT =  0.8;
     
-        public static final double AIM_POSITION_NEAR_SHOT =  1.0;       // Actual limit is -1.619
-        public static final double AIM_POSITION_FAR_SHOT  = 45.0;       // Actual limit 47.0
+        public static final double AIM_POSITION_ZERO_POS =   0.0;
+        public static final double AIM_POSITION_NEAR_SHOT =  0.0;       // Hard stop for manual zero set
+        public static final double AIM_POSITION_FAR_SHOT  = 35.0;       // Limit 40.0
         public static final double AIM_GEAR_RATIO         = 100.0;
 
-        public static final double  MIN_AIM_POSITION = -2.0;       // Actual is -1.5, set to -2 so physical stop will always be detectable with current sensing
-        public static final double  MAX_AIM_POSITION = 45.0;       // Actual limit 48.0
+        public static final double  MIN_AIM_POSITION = 0.0;
+        public static final double  MAX_AIM_POSITION = 36.0;       // Actual limit ?
         public static final boolean AIM_MOTOR_ENABLE_SOFT_LIMITS = true;
 
         public static final int  AIM_SMART_CURRENT_LIMIT     = 20;

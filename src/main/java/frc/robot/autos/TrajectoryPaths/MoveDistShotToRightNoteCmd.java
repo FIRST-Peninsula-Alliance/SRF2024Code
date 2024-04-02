@@ -41,18 +41,18 @@ public class MoveDistShotToRightNoteCmd extends SequentialCommandGroup {
 
     moveDistShotToRightNote = TrajectoryGenerator.generateTrajectory
                                  (
-                                  new Pose2d(Units.inchesToMeters(112.0), 
+                                  new Pose2d(Units.inchesToMeters(120.0), 
                                               Units.inchesToMeters(57.0), 
                                               Rotation2d.fromDegrees(0.0)),
-                                  List.of(new Translation2d(Units.inchesToMeters(113.0), 
+                                  List.of(new Translation2d(Units.inchesToMeters(121.0), 
                                                             Units.inchesToMeters(56.0)),
-                                          new Translation2d(Units.inchesToMeters(113.0), 
+                                          new Translation2d(Units.inchesToMeters(130.0), 
                                                             Units.inchesToMeters(25.0)),
-                                          new Translation2d(Units.inchesToMeters(113.0), 
+                                          new Translation2d(Units.inchesToMeters(139.0), 
                                                             Units.inchesToMeters(1.0))),
-                                  new Pose2d(Units.inchesToMeters(114.0),
+                                  new Pose2d(Units.inchesToMeters(140.0),
                                               Units.inchesToMeters(0.0),
-                                              Rotation2d.fromDegrees(270.0)),
+                                              Rotation2d.fromDegrees(280.0)),
                                   moveConfig
                                  );
 

@@ -4,10 +4,11 @@
 
 package frc.robot.autos;
 
-import frc.robot.autos.TrajectoryPaths.MoveCenNoteToDistantShotCmd;
-import frc.robot.autos.TrajectoryPaths.MoveDistShotToLeftNoteCmd;
-import frc.robot.autos.TrajectoryPaths.MoveDistShotToRightNoteCmd;
-import frc.robot.autos.TrajectoryPaths.MoveLeftNoteToIndexedShotCmd;
+//import frc.robot.autos.TrajectoryPaths.MoveCenNoteToDistantShotCmd;
+import frc.robot.autos.TrajectoryPaths.MoveCenNoteToRightNoteCmd;
+//import frc.robot.autos.TrajectoryPaths.MoveDistShotToLeftNoteCmd;
+//import frc.robot.autos.TrajectoryPaths.MoveDistShotToRightNoteCmd;
+//import frc.robot.autos.TrajectoryPaths.MoveLeftNoteToIndexedShotCmd;
 import frc.robot.autos.TrajectoryPaths.MoveRightNoteToDistantShotCmd;
 import frc.robot.autos.TrajectoryPaths.MoveSpkrCenToCenNoteCmd;
 import frc.robot.commands.DeployIntakeCmd;
@@ -18,7 +19,7 @@ import frc.robot.subsystems.MasterArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
+//import edu.wpi.first.wpilibj2.command.WaitCommand;
 
 public class ScoreMultipleNotesCenterAuto extends SequentialCommandGroup {
 
@@ -30,22 +31,24 @@ public class ScoreMultipleNotesCenterAuto extends SequentialCommandGroup {
                 new DeployIntakeCmd(noteConductor),
                 new MoveSpkrCenToCenNoteCmd(swerveDrive, true),
                 // Assume we picked up note, but allow time to recover from any mis-allignment
-                new WaitCommand(1.0),
+                // new WaitCommand(1.0),
                 new RetrieveIntakeCmd(noteConductor),
-                new MoveCenNoteToDistantShotCmd(swerveDrive),
+                // new MoveCenNoteToDistantShotCmd(swerveDrive),
                 new ScoreDistantSpeakerCmd(noteConductor),
                 new DeployIntakeCmd(noteConductor),
-                new MoveDistShotToRightNoteCmd(swerveDrive),
-                new WaitCommand(1.0),
+                new MoveCenNoteToRightNoteCmd(swerveDrive),
+                // new WaitCommand(1.0),
                 new RetrieveIntakeCmd(noteConductor),
                 new MoveRightNoteToDistantShotCmd(swerveDrive),
-                new ScoreDistantSpeakerCmd(noteConductor),
+                new ScoreDistantSpeakerCmd(noteConductor)
+                /*
                 new DeployIntakeCmd(noteConductor),
                 new MoveDistShotToLeftNoteCmd(swerveDrive),
                 new WaitCommand(1.0),
                 new RetrieveIntakeCmd(noteConductor),
                 new MoveLeftNoteToIndexedShotCmd(swerveDrive),
                 new ScoreIndexedSpeakerCmd(noteConductor)
+                */
                );
   }
 }

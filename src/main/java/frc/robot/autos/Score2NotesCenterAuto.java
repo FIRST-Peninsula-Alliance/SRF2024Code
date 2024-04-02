@@ -6,14 +6,16 @@ package frc.robot.autos;
 
 import frc.robot.subsystems.MasterArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.autos.TrajectoryPaths.MoveCenNoteToIndexedShotCmd;
+//import frc.robot.autos.TrajectoryPaths.MoveCenNoteToDistantShotCmd;
+//import frc.robot.autos.TrajectoryPaths.MoveCenNoteToIndexedShotCmd;
 import frc.robot.autos.TrajectoryPaths.MoveSpkrCenToCenNoteCmd;
 import frc.robot.commands.DeployIntakeCmd;
 import frc.robot.commands.RetrieveIntakeCmd;
+import frc.robot.commands.ScoreDistantSpeakerCmd;
 import frc.robot.commands.ScoreIndexedSpeakerCmd;
 
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
+//import edu.wpi.first.wpilibj2.command.WaitCommand;
 
 public class Score2NotesCenterAuto extends SequentialCommandGroup {
 
@@ -26,11 +28,13 @@ public class Score2NotesCenterAuto extends SequentialCommandGroup {
                 new DeployIntakeCmd(noteConductor),
                 new MoveSpkrCenToCenNoteCmd(swerveDrive, true),
                 // Assume we picked up note, but add a short wait to correct any misallignment
-                new WaitCommand(1.0),
+                //new WaitCommand(1.0),
                 new RetrieveIntakeCmd(noteConductor),
                 // For 2 note auto, back up to speaker, then score indexed shot
-                new MoveCenNoteToIndexedShotCmd(swerveDrive).withTimeout(3.0),
-                new ScoreIndexedSpeakerCmd(noteConductor)
+                //new MoveCenNoteToIndexedShotCmd(swerveDrive).withTimeout(3.0),
+                //new MoveCenNoteToDistantShotCmd(swerveDrive),
+                //new ScoreIndexedSpeakerCmd(noteConductor)
+                new ScoreDistantSpeakerCmd(noteConductor)
                );
   }
 }

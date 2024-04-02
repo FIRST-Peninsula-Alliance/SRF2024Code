@@ -11,7 +11,6 @@ import frc.robot.autos.TrajectoryPaths.MoveSpkrRightToRightNoteCmd;
 import frc.robot.commands.DeployIntakeCmd;
 import frc.robot.commands.RetrieveIntakeCmd;
 import frc.robot.commands.ScoreIndexedSpeakerCmd;
-
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 

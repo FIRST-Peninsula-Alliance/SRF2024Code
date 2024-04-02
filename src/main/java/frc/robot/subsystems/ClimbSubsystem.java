@@ -130,20 +130,18 @@ public class ClimbSubsystem extends SubsystemBase {
 
     if (Math.abs(m_elevatorFactor) > 0.0) {
       m_elevatorPosition = m_integratedElevatorEncoder.getPosition();
-      /*
-      if ((m_elevatorPosition >= CC.ELEVATOR_MAX_POS) ||
-          ((m_elevatorPosition <= CC.ELEVATOR_MIN_POS))) {
+      if (m_elevatorPosition >= CC.ELEVATOR_MAX_POS) {
         m_elevatorFactor = 0.0;
         m_elevatorMotor.stopMotor();
         System.out.println("SW Limits tripped on elevator");
       } else {
-        */
+
         // with REV, a simple .set(speed) (i.e. no PID controller) defaults
         // to DutyCycle out
         m_elevatorMotor.set(CC.ELEVATOR_DUTY_CYCLE *
                             m_elevatorFactor * 
                             SwerveSubsystem.getVarMaxOutputFactor());
-//      }
+      }
     } else {
       m_elevatorMotor.stopMotor();
     }
@@ -158,7 +156,7 @@ public class ClimbSubsystem extends SubsystemBase {
                                             .withEnableFOC(true)
                                             .withUpdateFreqHz(50));    
     }
-    //SmartDashboard.putNumber("Elevator Pos", m_elevatorMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("Elevator Pos", m_elevatorMotor.getEncoder().getPosition());
     SmartDashboard.putNumber("Elevator Amps", m_elevatorMotor.getOutputCurrent());
     SmartDashboard.putNumber("Climb Winch Amps", m_climbMotor.getSupplyCurrent().getValueAsDouble());
   }

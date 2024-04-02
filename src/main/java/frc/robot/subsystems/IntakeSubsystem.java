@@ -29,7 +29,7 @@ import frc.lib.util.FileRecorder;
 import frc.lib.util.FileRecorder.NoteRequest;
 import frc.robot.Constants;
 import frc.robot.NotableConstants.IC;
-import frc.robot.commands.RumbleCmd;
+// import frc.robot.commands.RumbleCmd;
 
 public class IntakeSubsystem extends SubsystemBase {
   private TalonFX m_intakeMotor;
@@ -46,7 +46,7 @@ public class IntakeSubsystem extends SubsystemBase {
   private Supplier<String> m_currentStateName;    // Name of current note state from MasterArmSubsystem
   private IntSupplier m_currentSeqNo;
   private FileRecorder m_fileRecorder;
-  private static boolean LOGGING_ACTIVE = FileRecorder.isFileRecorderAvail();
+  private boolean LOGGING_ACTIVE;
 
   // Declare Phoenix6 control request object for the Intake Motor:
   // No need for PID control (with or without arbitrary 
@@ -63,6 +63,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_currentStateName = currentStateName;
     m_currentSeqNo = currentSeqNo;
     m_fileRecorder = fileRecorder;
+    LOGGING_ACTIVE = m_fileRecorder.isFileRecorderAvail();
     m_intakeMotor = new TalonFX(IC.INTAKE_FALCON_MOTOR_ID, Constants.CANIVORE_BUS_NAME);
     configIntakeMotor();
   }
@@ -195,18 +196,24 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void checkLidarNoteDetection() {
     m_intakeSensorDistance = m_lidar.getDistance();
-    SmartDashboard.putNumber("Note Dist Sensor", m_intakeSensorDistance);
-          // only check if actively acquiring a note
+    // SmartDashboard.putNumber("Note Dist Sensor", m_intakeSensorDistance);
+    // only check if actively acquiring a note
     if (m_intakeSpeedFactor == IC.ACQUIRE_NOTE) {
       if (m_intakeSensorDistance < IC.NOTE_ACQUIRED_DISTANCE_THRESHOLD) {
+        //System.out.println("Lidar Count = "+m_intakeThresholdCount);
         m_intakeThresholdCount++;
-        if (m_intakeThresholdCount > 5) {
-          triggerNoteAcquired();
-          new RumbleCmd(2, .5, 400).schedule();
-        }
+        //SmartDashboard.putNumber("Intake Threshold Count", m_intakeThresholdCount);
+        if (m_intakeThresholdCount > 3) {
+          //triggerNoteAcquired();
+          //new RumbleCmd(2, .5, 400).schedule();
+        } 
+      } else {
+        m_intakeThresholdCount = 0;
+        //System.out.println("Lidar Greater than threshold");
       }
+    } else {
+      m_intakeThresholdCount = 0;
     }
-    m_intakeThresholdCount = 0;
   }
 
   // triggeerNoteAcquired() may be called from the LidarLite sensor polling method above,
