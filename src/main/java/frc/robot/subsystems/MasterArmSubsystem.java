@@ -25,7 +25,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 
 import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
@@ -287,6 +286,7 @@ public class MasterArmSubsystem extends SubsystemBase {
     }
   }
 
+  // Since shooter wheels do not stop in Autonomous, need this to stop the shooter
   public void teleopStart() {
     m_shooterSubsystem.cancelShooter();
   }
@@ -1200,11 +1200,7 @@ public class MasterArmSubsystem extends SubsystemBase {
           gotoPosition(MAC.INDEXED_SPEAKER_SHOT_POS);
           m_innerArmSubsystem.gotoVerticalUpPos();
           changeNoteStateTo(Repetoire.NOTE_HANDLER_IDLE);
-          if (RobotState.isAutonomous()) {
-            //leaves shooter running throughout autonomous
-          } else {
-            m_shooterSubsystem.cancelShooter();
-           }
+          m_shooterSubsystem.cancelShooter();       // If autonomous, this is ignored
         }
         break;
 

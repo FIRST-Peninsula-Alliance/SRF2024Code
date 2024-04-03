@@ -90,13 +90,14 @@ public class FileRecorder {
                                 int seqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write( caller+" Move: "+
+                m_bufferedWriter.write( caller+m_separator+
                                         eventType.toString()+m_separator+
                                         F.df4.format(setpoint)+m_separator+
                                         F.df4.format(positionError)+m_separator+
                                         F.df80.format(relTimeMillis)+m_separator+
                                         F.df40.format(elapsedTime)+m_separator+
-                                        state+m_separator+m_separator+
+                                        state+m_separator+
+                                        /* new state */ m_separator+
                                         F.df20.format(seqNo) );
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
@@ -116,9 +117,11 @@ public class FileRecorder {
             try {
                 m_bufferedWriter.write(caller+m_separator+
                                        requestType.toString()+m_separator+
-                                       F.df4.format(setpoint)+m_separator+m_separator+
+                                       F.df4.format(setpoint)+m_separator+
+                                       /* SP Err */ m_separator+
                                        F.df80.format(startTimeMillis)+m_separator+
-                                       state+m_separator+m_separator+
+                                       state+m_separator+
+                                       /* new state */ m_separator+
                                        F.df20.format(seqNo));
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
@@ -134,10 +137,14 @@ public class FileRecorder {
                                   int seqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write(requestType.toString()+m_separator+
-                                       m_separator+m_separator+m_separator+ 
+                m_bufferedWriter.write("Intake"+m_separator+
+                                       requestType.toString()+m_separator+
+                                       /* Curr SP */ m_separator+
+                                       /* SP Err */  m_separator+
                                        F.df80.format(startTimeMillis)+m_separator+
-                                       state+m_separator+m_separator+
+                                       /* Elapsed time */ m_separator+
+                                       state+m_separator+
+                                       /* New state */ m_separator+
                                        F.df20.format(seqNo));
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
@@ -155,11 +162,13 @@ public class FileRecorder {
                                     int currentSeqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write(requestType.toString()+m_separator+m_separator+
+                m_bufferedWriter.write("Shooter"+m_separator+
+                                       requestType.toString()+m_separator+
                                        F.df4.format(shooterRPS)+m_separator+
                                        F.df4.format(aimSetpoint)+m_separator+
                                        F.df80.format(startTimeMillis)+m_separator+
-                                       currentState+m_separator+m_separator+
+                                       currentState+m_separator+
+                                       /* new state */ m_separator+
                                        F.df20.format(currentSeqNo));
                 m_bufferedWriter.newLine();
             } catch (IOException e) {
@@ -176,8 +185,11 @@ public class FileRecorder {
         if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write( NoteEvent.STATE_CHANGE.toString()+m_separator+
-                                        m_separator+m_separator+
-                                        F.df80.format(relTimeMillis)+m_separator+
+                                        /* Event type moot */ m_separator+
+                                        /* SP */ m_separator+
+                                        /* SP Err */ m_separator+
+                                        F.df80.format(relTimeMillis)+
+                                        /* elapsed time */ m_separator+
                                         oldState+m_separator+
                                         newState+m_separator+
                                         F.df2.format(currentSeqNo));
@@ -196,9 +208,13 @@ public class FileRecorder {
         if (NOTE_LOGGING_ACTIVE) {
             try {
                 m_bufferedWriter.write( NoteEvent.SEQ_NO_CHANGE.toString()+m_separator+
-                                        m_separator+m_separator+m_separator+
+                                        /* Event type moot */ m_separator+
+                                        /* SP */ m_separator+
+                                        /* SPErr */ m_separator+
                                         F.df80.format(relTimeMillis)+m_separator+
-                                        State+m_separator+m_separator+
+                                        /* Elapsed time */ m_separator+
+                                        State+m_separator+
+                                        /* new state */ m_separator+
                                         F.df20.format(oldSeqNo)+m_separator+
                                         F.df20.format(newSeqNo));
                 m_bufferedWriter.newLine();

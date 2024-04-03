@@ -16,6 +16,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -32,7 +33,8 @@ public class ClimbSubsystem extends SubsystemBase {
   private CANSparkMax m_elevatorMotor = new CANSparkMax(CC.ELEVATOR_NEO550_ID, MotorType.kBrushless);
   //private SparkPIDController m_elevatorController;
   RelativeEncoder m_integratedElevatorEncoder = m_elevatorMotor.getEncoder();
-
+  private DigitalInput m_climberLimitSwitch = new DigitalInput(1);
+  
   private static double m_elevatorFactor;
   private static boolean m_elevatorHasBeenDeployed;
   private static long m_elevatorStartTime;
@@ -133,9 +135,12 @@ public class ClimbSubsystem extends SubsystemBase {
       if (m_elevatorPosition >= CC.ELEVATOR_MAX_POS) {
         m_elevatorFactor = 0.0;
         m_elevatorMotor.stopMotor();
-        System.out.println("SW Limits tripped on elevator");
+        System.out.println("SW Upper Limit tripped on elevator");
+      } else if (m_elevatorPosition < -5) {
+        m_elevatorFactor = 0.0;
+        m_elevatorMotor.stopMotor();
+        System.out.println("SW Lower Limit tripped on elevator");
       } else {
-
         // with REV, a simple .set(speed) (i.e. no PID controller) defaults
         // to DutyCycle out
         m_elevatorMotor.set(CC.ELEVATOR_DUTY_CYCLE *
@@ -147,10 +152,16 @@ public class ClimbSubsystem extends SubsystemBase {
     }
       
     if (m_climbMotorFactor > 0.0) {
-      m_climbMotor.setControl(m_climbRequest.withOutput(CC.CLIMBER_DUTY_CYCLE * 
+      if (m_climberLimitSwitch.get()) {
+        m_climbMotor.setControl(m_climbRequest.withOutput(0.0)
+                                            .withEnableFOC(true)
+                                            .withUpdateFreqHz(50));    
+      } else {
+        m_climbMotor.setControl(m_climbRequest.withOutput(CC.CLIMBER_DUTY_CYCLE * 
                                                         m_climbMotorFactor )
                                             .withEnableFOC(true)
                                             .withUpdateFreqHz(50));
+      }
     } else {
        m_climbMotor.setControl(m_climbRequest.withOutput(0.0)
                                             .withEnableFOC(true)

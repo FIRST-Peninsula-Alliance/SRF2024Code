@@ -42,6 +42,7 @@ public class ScoreMultipleNotesCenterAuto extends SequentialCommandGroup {
                 new MoveRightNoteToDistantShotCmd(swerveDrive),
                 new ScoreDistantSpeakerCmd(noteConductor)
                 /*
+                // Not enough time to do the rest
                 new DeployIntakeCmd(noteConductor),
                 new MoveDistShotToLeftNoteCmd(swerveDrive),
                 new WaitCommand(1.0),

@@ -31,7 +31,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue MASTER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
 
         public static final int MASTER_ARM_ENCODER_ID = 10;
-        public static final double MASTER_ARM_ENCODER_MAGNET_OFFSET = -0.3679;
+        public static final double MASTER_ARM_ENCODER_MAGNET_OFFSET = -0.36945;
         public static final AbsoluteSensorRangeValue MASTER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue MASTER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -107,7 +107,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue INNER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
         
         public static final int INNER_ARM_CANCODER_ID = 11;
-        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = -0.242625;
+        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = -0.24791;
         public static final AbsoluteSensorRangeValue INNER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue INNER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -304,8 +304,8 @@ public final class NotableConstants {           // As in all these constants are
 
         public static final double CLIMB_OUTPUT_LIMIT_FACTOR = 1.0;
 
-        public static final double ELEVATOR_MIN_POS  = -2.0;            // only for legacy note
-        public static final double ELEVATOR_MAX_POS = 122.0;            // current safety thresholds used instead
+        public static final double ELEVATOR_MIN_POS  = -5.0;            // 
+        public static final double ELEVATOR_MAX_POS = 102.0;            // current safety thresholds used instead
 
         public static final int ELEVATOR_SMART_CURRENT_LIMIT     = 16;
         public static final int ELEVATOR_SECONDARY_CURRENT_LIMIT = 20;

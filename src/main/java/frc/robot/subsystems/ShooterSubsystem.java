@@ -52,7 +52,6 @@ public class ShooterSubsystem extends SubsystemBase {
   private long m_elapsedTime;
 
   private long m_autoStartTime;
-  private int m_autoShotNumber;
   private boolean m_aimIsReady = false;
   private double m_aimAbsPosError;
   private boolean m_shooterWheelsUpToSpeed = false;
@@ -122,7 +121,6 @@ public class ShooterSubsystem extends SubsystemBase {
     if (m_autoStartTime == 0) {
       m_autoStartTime = System.currentTimeMillis();
       System.out.println("Shooter Auto # 1 shot triggered at "+m_autoStartTime);
-      m_autoShotNumber = 1;
     }
     m_aimIsReady = false;
     m_shooterWheelsUpToSpeed = false;
@@ -154,9 +152,6 @@ public class ShooterSubsystem extends SubsystemBase {
     // shot Amperage measurement, and a deterministic overall timeout for
     // completeion of a shot, so that the shooter motor can be stopped.
     m_startTime = System.currentTimeMillis();
-    if (RobotState.isAutonomous()) {
-      System.out.println("Auto shot # "+m_autoShotNumber+" final trigger at "+m_startTime+" ms");
-    }
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordShooterEvent(NoteRequest.SHOOTER_SCORE,
                                         m_shooterTargetVel,
@@ -296,9 +291,6 @@ public class ShooterSubsystem extends SubsystemBase {
                                             m_currentSeqNo.getAsInt());
           }
           m_shooterStatus = ShooterState.WAITING_FOR_SHOT;
-          if (RobotState.isAutonomous()) {
-            System.out.println("Shooter prep timeout after 700 ms");
-          }
           break;
         }
 
@@ -316,9 +308,6 @@ public class ShooterSubsystem extends SubsystemBase {
                                   m_currentStateName.get(),
                                   m_currentSeqNo.getAsInt());
             }
-            if (RobotState.isAutonomous()) {
-              System.out.println("Aim took "+m_elapsedTime+" ms to prep for auto shot # "+m_autoShotNumber);
-            }
           }
         }
         if (! m_shooterWheelsUpToSpeed) {
@@ -333,9 +322,6 @@ public class ShooterSubsystem extends SubsystemBase {
                                   m_elapsedTime,
                                   m_currentStateName.get(),
                                   m_currentSeqNo.getAsInt());
-            }
-            if (RobotState.isAutonomous()) {
-              System.out.println("Wheels took "+m_elapsedTime+" ms to prep for auto shot # "+m_autoShotNumber);
             }
           }
         }
@@ -363,11 +349,6 @@ public class ShooterSubsystem extends SubsystemBase {
                                             m_currentStateName.get(),
                                             m_currentSeqNo.getAsInt());
           }
-          m_shooterStatus = ShooterState.SHOT_DETECTED;
-          if (RobotState.isAutonomous()) {
-            System.out.println("Shot # "+m_autoShotNumber+" detected "+m_elapsedTime+" ms after final trigger");
-            m_autoShotNumber++;
-          }
         } else if (m_elapsedTime > 700) {
           if (LOGGING_ACTIVE) {
             m_fileRecorder.recordMoveEvent( "Shot (waiting) ",
@@ -380,10 +361,6 @@ public class ShooterSubsystem extends SubsystemBase {
                                             m_currentSeqNo.getAsInt());
           }
           m_shooterStatus = ShooterState.SHOT_DETECTED;     // timeout occured, so just pretend spike happened
-          if (RobotState.isAutonomous()) {
-            System.out.println("Auto Shot # "+m_autoShotNumber+" not detected before Timeout of "+m_elapsedTime+" ms after final trigger");
-            m_autoShotNumber++;
-          }
         }
         break;
 

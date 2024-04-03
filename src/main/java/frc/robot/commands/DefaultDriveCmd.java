@@ -5,7 +5,7 @@ import frc.robot.subsystems.*;
 
 import java.util.function.DoubleSupplier;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.SlewRateLimiter;
+//  import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 
@@ -14,8 +14,8 @@ public class DefaultDriveCmd extends Command {
     private DoubleSupplier m_translationSup;
     private DoubleSupplier m_strafeSup;
     private DoubleSupplier m_rotationSup;
-    private SlewRateLimiter m_translateSRLimiter;
-    private SlewRateLimiter m_strafeSRLimiter;
+    // private SlewRateLimiter m_translateSRLimiter;
+    // private SlewRateLimiter m_strafeSRLimiter;
     // private SlewRateLimiter m_rotateSRLimiter;
     private double m_translateVal;
     private double m_strafeVal;
@@ -31,8 +31,8 @@ public class DefaultDriveCmd extends Command {
         m_swerveDrive = swerveDriveSubsys;
         addRequirements(swerveDriveSubsys);
 
-        m_translateSRLimiter = new SlewRateLimiter(0.5);
-        m_strafeSRLimiter = new SlewRateLimiter(0.5);
+        // m_translateSRLimiter = new SlewRateLimiter(0.5);
+        //  m_strafeSRLimiter = new SlewRateLimiter(0.5);
         // m_rotateSRLimiter = new SlewRateLimiter(0.5);
     }
 
@@ -44,8 +44,8 @@ public class DefaultDriveCmd extends Command {
         m_rotateVal = MathUtil.applyDeadband(m_rotationSup.getAsDouble(), UIC.JOYSTICK_DEADBAND);
 
         // Apply slewRateLimiters
-        m_translateVal = m_translateSRLimiter.calculate(m_translateVal);
-        m_strafeVal = m_strafeSRLimiter.calculate(m_strafeVal);
+        // m_translateVal = m_translateSRLimiter.calculate(m_translateVal);
+        // m_strafeVal = m_strafeSRLimiter.calculate(m_strafeVal);
         // m_rotateVal = m_rotateSRLimiter.calculate(m_rotateVal);
 
         // Drive

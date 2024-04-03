@@ -30,7 +30,8 @@ public class Score2NotesCenterAuto extends SequentialCommandGroup {
                 // Assume we picked up note, but add a short wait to correct any misallignment
                 //new WaitCommand(1.0),
                 new RetrieveIntakeCmd(noteConductor),
-                // For 2 note auto, back up to speaker, then score indexed shot
+                // For 2 note auto, could back up to speaker, then score indexed shot,
+                // but can also score distant shot
                 //new MoveCenNoteToIndexedShotCmd(swerveDrive).withTimeout(3.0),
                 //new MoveCenNoteToDistantShotCmd(swerveDrive),
                 //new ScoreIndexedSpeakerCmd(noteConductor)
