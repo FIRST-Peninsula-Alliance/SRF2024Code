@@ -1,0 +1,24 @@
+Things changed:
+
+1. Fixed Intake Req Event Posting to initialize start time on eject note
+2. Added motor velocity to intake event records. 
+	Note: Motor speed is .9 percent output, but we don't know actual velocity.
+	
+   Have a 10:1 gearbox followed by 18:24 timing belt pulleys. If motor speed is
+   5000 RPM that is 500 ROM * .75 / 60 = 6.25 RPS. WITH pulley dia 
+   of 1.5" = 4.7123889 inches circumference, the eject belt speed will be about 29 in/sec.
+   A timeout of 500 ms to eject 11" of note seems reasonable.
+3. Changed EjectNote timeout to 500 ms (instead of 1000 ms)
+4. Removed 300 ms delays after wheels are ready to shoot, before shooting,
+   in both ScoreIndexedShotCmd and ScoreDistantShotCmd
+5. Deletedmd (commented out) DefaultIntakeCmd in MaasterArmController
+6. Made deployIntake and MoveCenNoteToRightNotePosCmd parallel insead of sequential
+   in ScoreMultipleNotesAuto
+7. Already left shooter wheels spun up through auto
+8. Need to test 2 Note Auto from Left and Right sides to ensure they finish in 15 Seconds
+9. Try to retract intake directly to PrepForDistantShotPos when in Auto mode and
+   Score multipleNoteAuto (use a flag, and issue PrepForDistantShot when InnerArm is
+   vertical.
+   Saves at least two moves per shot, and also the wait for aim and spin up to distant
+   shot speed happen in parallel with first move. After that, the shooter components
+   remain in distant mode until the end of autonomous.

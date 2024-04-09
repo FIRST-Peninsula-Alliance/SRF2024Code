@@ -94,7 +94,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    * state changes and errors to a thumb drive.
    ********************************************************/
   private static boolean DEBUG_ON = false;
-  public static boolean NOTE_LOGGING_ACTIVE = true;
+  public static boolean NOTE_LOGGING_ACTIVE = false;
   public static boolean CTRE_SIGNAL_LOGGING_ACTIVE = false;
 
   public FileRecorder      m_fileRecorder;
@@ -150,6 +150,9 @@ public class MasterArmSubsystem extends SubsystemBase {
   //  m_intakeSubsystem.setDefaultCommand(DefaultIntakeCmd(m_intakeSubsystem, ()->RobotContainer.getHidXboxCtrl().getLeftY()));
     m_nowPlaying = Repetoire.NOTE_HANDLER_IDLE;
     m_pendingNote = m_nowPlaying;
+    // The following is needed, but is redundant here, as the inneerArmSubsystem
+    // constructor initializes to vertical position. Still, it can't hurt to help
+    // ensure it gets there.
     m_innerArmSubsystem.gotoVerticalUpPos();
     m_isDistantSpeakerShot = false;
     m_noWaitToScore = false;
@@ -256,12 +259,15 @@ public class MasterArmSubsystem extends SubsystemBase {
     }
   }
 
-  public void prepForDistantSpeakerScore() {
+  // @param voltage = a double value which is either SC.SHOOTER_VOLTAGE_OUT_FAR
+  // or SC.SHOOTER_VOLTAGE_OUT_PASS
+  public void prepForDistantSpeakerScore(double voltage) {
     if ((m_nowPlaying == Repetoire.WAIT_FOR_SPECIFIED_GOAL)
         ||
         (m_nowPlaying == Repetoire.NOTE_HANDLER_IDLE)) {
       changeNoteStateTo(Repetoire.PREP_FOR_SPEAKER_GOAL);
       m_isDistantSpeakerShot = true;
+      m_shooterSubsystem.setDistantShotVoltageOut(voltage);
       // Ensure the m_noWaitToScore flag is cleared here for normal use. 
       // If it needs to be set, do so after this method is called.
       m_noWaitToScore = false;
@@ -272,6 +278,7 @@ public class MasterArmSubsystem extends SubsystemBase {
   }
 
   public void scoreNote() {
+    System.out.println("ScoreNote @ NST State = "+m_nowPlaying.toString());
     if (m_nowPlaying == Repetoire.WAIT_TO_SCORE_SPEAKER) {
       changeNoteStateTo(Repetoire.SCORE_SPEAKER);
     } else if (m_nowPlaying == Repetoire.WAIT_TO_SCORE_AMP) {

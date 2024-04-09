@@ -38,12 +38,12 @@ public class MoveRightNoteToRightIndexedShotCmd extends SequentialCommandGroup {
       TrajectoryGenerator.generateTrajectory(
           // Start at the end Pose2d of the MoveSpkrRightToRightNote trajectory
           new Pose2d(Units.inchesToMeters(108.0), 
-                     Units.inchesToMeters(-22.0), 
+                     Units.inchesToMeters(-16.0), 
                      Rotation2d.fromDegrees(0.0)),
           List.of(new Translation2d(Units.inchesToMeters(107.0), 
-                                    Units.inchesToMeters(-21.0)),
+                                    Units.inchesToMeters(-15.0)),
                   new Translation2d(Units.inchesToMeters(80.0), 
-                                    Units.inchesToMeters(-13.0)),
+                                    Units.inchesToMeters(-12.0)),
                   new Translation2d(Units.inchesToMeters(42.0), 
                                     Units.inchesToMeters(-7.0))),
           new Pose2d(Units.inchesToMeters(31.0),

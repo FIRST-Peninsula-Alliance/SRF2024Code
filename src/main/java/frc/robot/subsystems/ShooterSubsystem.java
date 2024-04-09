@@ -44,6 +44,8 @@ public class ShooterSubsystem extends SubsystemBase {
   private CANSparkMax m_aimMotor = new CANSparkMax(SC.AIM_NEO550_ID, MotorType.kBrushless);
   private SparkPIDController m_aimController = m_aimMotor.getPIDController() ;
   private RelativeEncoder m_integratedAimEncoder = m_aimMotor.getEncoder();
+  private double m_distantShotVoltageOut;     // Allows either a note pass, or a Speaker score,
+                                              // to be dynamically differentiated
   private double m_shooterVoltageOut;
   private double m_shooterTargetVel;
   private double m_aimTargetPos;
@@ -51,7 +53,7 @@ public class ShooterSubsystem extends SubsystemBase {
   private long m_startTime;       // can share between Aim and Shooter, because they are logically synced
   private long m_elapsedTime;
 
-  private long m_autoStartTime;
+  //private long m_autoStartTime;
   private boolean m_aimIsReady = false;
   private double m_aimAbsPosError;
   private boolean m_shooterWheelsUpToSpeed = false;
@@ -88,9 +90,10 @@ public class ShooterSubsystem extends SubsystemBase {
     configShooterMotor();
     configAimingMotor();
 
+    m_distantShotVoltageOut = SC.SHOOTER_VOLTAGE_OUT_FAR;
     m_shooterVoltageOut = SC.SHOOTER_VOLTAGE_OUT_NEAR;
     m_isFarShot = false;
-    m_autoStartTime = 0;
+    //m_autoStartTime = 0;
     m_shooterStatus = ShooterState.IDLE;
     // m_aimController.setReference(-(SC.MAX_AIM_POSITION+2), CANSparkMax.ControlType.kPosition);
     // m_startTime = System.currentTimeMillis();
@@ -106,22 +109,32 @@ public class ShooterSubsystem extends SubsystemBase {
     //System.out.println("Shooter aim adjusted to "+m_aimTargetPos+" rotations");
    }
   
+   // Set shooter voltage for distant shot
+   public void setDistantShotVoltageOut(double voltage) {
+    m_distantShotVoltageOut = voltage;
+   }
+
    // Set shooter speed and aim in prep for a shot
   public void prepareToShoot(boolean isFarShot) {
     m_isFarShot = isFarShot;
     if (m_isFarShot) {     // setup for far shot
       m_aimTargetPos = SC.AIM_POSITION_FAR_SHOT;
       m_shooterTargetVel = SC.SHOOTER_VELOCITY_FAR;
-      m_shooterVoltageOut = SC.SHOOTER_VOLTAGE_OUT_FAR;
+      m_shooterVoltageOut = m_distantShotVoltageOut;
+      if (m_shooterVoltageOut == SC.SHOOTER_VOLTAGE_OUT_PASS) {
+        m_shooterTargetVel = SC.SHOOTER_VELOCITY_PASS;
+      } else {
+        m_shooterTargetVel = SC.SHOOTER_VELOCITY_FAR;
+      }
     } else {
       m_aimTargetPos = SC.AIM_POSITION_NEAR_SHOT;
       m_shooterTargetVel = SC.SHOOTER_VELOCITY_NEAR;
       m_shooterVoltageOut = SC.SHOOTER_VOLTAGE_OUT_NEAR;     
     }
-    if (m_autoStartTime == 0) {
-      m_autoStartTime = System.currentTimeMillis();
-      System.out.println("Shooter Auto # 1 shot triggered at "+m_autoStartTime);
-    }
+    //if (m_autoStartTime == 0) {
+      //m_autoStartTime = System.currentTimeMillis();
+      //System.out.println("Shooter Auto # 1 shot triggered at "+m_autoStartTime);
+    //}
     m_aimIsReady = false;
     m_shooterWheelsUpToSpeed = false;
     m_shooterMotor.setControl(m_shooterRequest.withOutput(m_shooterVoltageOut));
@@ -281,10 +294,10 @@ public class ShooterSubsystem extends SubsystemBase {
         if (m_elapsedTime > 700) {
           new RumbleCmd(2, .5, 200).schedule();
           if (LOGGING_ACTIVE) {
-            m_fileRecorder.recordMoveEvent( "Shooter, ",
+            m_fileRecorder.recordMoveEvent( "Shooter",
                                             NoteEvent.TIMEOUT_OCCURED,
                                             m_shooterTargetVel,
-                                            m_shooterMotor.getVelocity().getValueAsDouble(),
+                                            m_shooterTargetVel - m_shooterMotor.getVelocity().getValueAsDouble(),
                                             System.currentTimeMillis(),
                                             m_elapsedTime,
                                             m_currentStateName.get(),
@@ -299,7 +312,7 @@ public class ShooterSubsystem extends SubsystemBase {
           if (m_aimAbsPosError <= SC.ALLOWED_SHOOTER_AIM_ERROR) {
             m_aimIsReady = true;
             if (LOGGING_ACTIVE) {
-              m_fileRecorder.recordMoveEvent( "Aim ",
+              m_fileRecorder.recordMoveEvent( "Aim",
                                   NoteEvent.SETPOINT_REACHED,
                                   m_aimTargetPos,
                                   m_aimTargetPos - m_integratedAimEncoder.getPosition(),
@@ -349,7 +362,7 @@ public class ShooterSubsystem extends SubsystemBase {
                                             m_currentStateName.get(),
                                             m_currentSeqNo.getAsInt());
           }
-        } else if (m_elapsedTime > 700) {
+        } else if (m_elapsedTime > 500) {
           if (LOGGING_ACTIVE) {
             m_fileRecorder.recordMoveEvent( "Shot (waiting) ",
                                             NoteEvent.TIMEOUT_OCCURED,

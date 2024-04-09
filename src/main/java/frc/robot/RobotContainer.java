@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.NotableConstants.SC;
 import frc.robot.autos.*;
 import frc.robot.commands.*;
 import frc.robot.subsystems.MasterArmSubsystem;
@@ -179,11 +180,12 @@ public class RobotContainer {
         
         // Note handling activities
         m_xbox.b().onTrue(new InstantCommand(()->m_masterArmSubsystem.acquireNote()));
-        m_xbox.a().onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForAmpScore()));
+        m_xbox.a().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForAmpScore()));
+        ALT.and(m_xbox.a()).onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForDistantSpeakerScore(SC.SHOOTER_VOLTAGE_OUT_PASS)));
         m_xbox.y().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForIndexedSpeakerScore()));
-        ALT.and(m_xbox.y()).onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForDistantSpeakerScore()));
-        m_xbox.rightTrigger(0.5).and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.scoreNote()));
+        ALT.and(m_xbox.y()).onTrue(new InstantCommand(()->m_masterArmSubsystem.prepForDistantSpeakerScore(SC.SHOOTER_VOLTAGE_OUT_FAR)));
         ALT.and(m_xbox.rightTrigger(0.5)).onTrue(new InstantCommand(()->m_masterArmSubsystem.discardNote()));
+        m_xbox.rightTrigger(0.5).and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.scoreNote()));
         m_xbox.start().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.stepPastDebugHold()));
         ALT.and(m_xbox.start()).onTrue(new InstantCommand(()->m_masterArmSubsystem.closeRecording()));
         m_xbox.leftTrigger().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.simulateNoteAcquired()));

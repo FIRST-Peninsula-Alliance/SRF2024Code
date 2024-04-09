@@ -31,7 +31,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue MASTER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
 
         public static final int MASTER_ARM_ENCODER_ID = 10;
-        public static final double MASTER_ARM_ENCODER_MAGNET_OFFSET = -0.36945;
+        public static final double MASTER_ARM_ENCODER_MAGNET_OFFSET = -0.36813;
         public static final AbsoluteSensorRangeValue MASTER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue MASTER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -107,7 +107,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue INNER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
         
         public static final int INNER_ARM_CANCODER_ID = 11;
-        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = -0.24791;
+        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = 0.201263;           // was 0.20593;     // was -0.0213;    // was -0.242625;
         public static final AbsoluteSensorRangeValue INNER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue INNER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -240,8 +240,12 @@ public final class NotableConstants {           // As in all these constants are
         
         public static final double SHOOTER_VOLTAGE_OUT_NEAR = 10.0;       // volts, use 9.0 for double wheel shooter
         public static final double SHOOTER_VOLTAGE_OUT_FAR  = 11.5;
+        public static final double SHOOTER_VOLTAGE_OUT_PASS = 11.0;
+
         public static final double SHOOTER_VELOCITY_NEAR    = 69.0;       // Estimated - needs measurment
         public static final double SHOOTER_VELOCITY_FAR     = 88.0;       // ditto
+        public static final double SHOOTER_VELOCITY_PASS    = 72.0;       // ditto
+        
         public static final double MIN_SHOOTER_SPEED        = 55.0;
         public static final double MIN_SHOOTER_VOLTAGE      =  3.0;
         public static final double MAX_SHOOTER_VOLTAGE      = 12.5;
@@ -283,7 +287,7 @@ public final class NotableConstants {           // As in all these constants are
         
         public static final int CLIMB_FALCON_ID = 20;
         public static final NeutralModeValue CLIMB_MOTOR_NEUTRAL_MODE = NeutralModeValue.Brake;
-        public static final InvertedValue CLIMB_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
+        public static final InvertedValue CLIMB_MOTOR_INVERT = InvertedValue.CounterClockwise_Positive;
         public static final double CLIMB_OPEN_LOOP_RAMP_PERIOD = 0.0;
         public static final double CLIMB_CLOSED_LOOP_RAMP_PERIOD = 0.0;
 

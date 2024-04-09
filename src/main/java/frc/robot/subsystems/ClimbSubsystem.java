@@ -11,10 +11,10 @@ import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
@@ -37,7 +37,6 @@ public class ClimbSubsystem extends SubsystemBase {
   
   private static double m_elevatorFactor;
   private static boolean m_elevatorHasBeenDeployed;
-  private static long m_elevatorStartTime;
   private static long m_climbStartTime;
 
   private static boolean m_safetyInterlockRemoved;
@@ -61,18 +60,17 @@ public class ClimbSubsystem extends SubsystemBase {
  * normal command "requirements".
  ***************************************************************/
   public void raiseElevator() {
+    SmartDashboard.putNumber("MatchTime", Timer.getMatchTime());
     if ((Timer.getMatchTime() < CC.SAFETY_THRESHOLD_TIME_BEFORE_MATCH_END) 
         ||
         m_safetyInterlockRemoved) {
       m_elevatorFactor = 1.0;
       m_elevatorHasBeenDeployed = true;
-      m_elevatorStartTime = System.currentTimeMillis();
     }
   }
 
   public void lowerElevator() {
     m_elevatorFactor = -1.0;
-    m_elevatorStartTime = System.currentTimeMillis();
   }
 
   public void stopElevator() {
@@ -97,6 +95,8 @@ public class ClimbSubsystem extends SubsystemBase {
 
   public void stopClimbWinch() {
     m_climbMotorFactor = 0.0;
+    long climbTime = System.currentTimeMillis() - m_climbStartTime;
+    SmartDashboard.putNumber("Climb Time (ms) ", climbTime);
   }
 
   /************************************************************
@@ -119,54 +119,50 @@ public class ClimbSubsystem extends SubsystemBase {
     // restart by pressing button(s) again. However, this also risks
     // immediate stops due to inrush current. Use the
     // motor encoder as a safety stop sensor (for both raising and lowering).
-    if ((System.currentTimeMillis() - m_elevatorStartTime) > CC.ELEVATOR_INRUSH_LOCKOUT_TIME) {
-      if (m_elevatorMotor.getOutputCurrent() > CC.ELEVATOR_SAFETY_THRESHOLD_CURRENT_LIMIT) {
-        m_elevatorFactor = 0.0;
-      }
-    }
+   // if ((System.currentTimeMillis() - m_elevatorStartTime) > CC.ELEVATOR_INRUSH_LOCKOUT_TIME) {
+   //   if (m_elevatorMotor.getOutputCurrent() > CC.ELEVATOR_SAFETY_THRESHOLD_CURRENT_LIMIT) {
+   //     m_elevatorFactor = 0.0;
+   //   }
+   // }
     if ((System.currentTimeMillis() - m_climbStartTime) > CC.CLIMB_WINCH_INRUSH_LOCKOUT_TIME) {
       if (m_climbMotor.getSupplyCurrent().getValueAsDouble() > CC.WINCH_SAFETY_THRESHOLD_CURRENT_LIMIT) {
         m_climbMotorFactor = 0.0;
       }
     }
 
-    if (Math.abs(m_elevatorFactor) > 0.0) {
+    if (m_elevatorFactor > 0.0) {
       m_elevatorPosition = m_integratedElevatorEncoder.getPosition();
       if (m_elevatorPosition >= CC.ELEVATOR_MAX_POS) {
         m_elevatorFactor = 0.0;
         m_elevatorMotor.stopMotor();
         System.out.println("SW Upper Limit tripped on elevator");
-      } else if (m_elevatorPosition < -5) {
-        m_elevatorFactor = 0.0;
-        m_elevatorMotor.stopMotor();
-        System.out.println("SW Lower Limit tripped on elevator");
-      } else {
-        // with REV, a simple .set(speed) (i.e. no PID controller) defaults
-        // to DutyCycle out
-        m_elevatorMotor.set(CC.ELEVATOR_DUTY_CYCLE *
-                            m_elevatorFactor * 
-                            SwerveSubsystem.getVarMaxOutputFactor());
       }
-    } else {
-      m_elevatorMotor.stopMotor();
+    } else if (m_elevatorFactor < 0.0) {
+      if (! m_safetyInterlockRemoved) {
+        if (m_elevatorPosition <= -5) {
+          m_elevatorFactor = 0.0;
+          m_elevatorMotor.stopMotor();
+          System.out.println("SW Lower Limit tripped on elevator");
+        }
+      }
     }
-      
+    
+    m_elevatorMotor.set(CC.ELEVATOR_DUTY_CYCLE *
+                        m_elevatorFactor * 
+                        SwerveSubsystem.getVarMaxOutputFactor());
+
     if (m_climbMotorFactor > 0.0) {
-      if (m_climberLimitSwitch.get()) {
-        m_climbMotor.setControl(m_climbRequest.withOutput(0.0)
-                                            .withEnableFOC(true)
-                                            .withUpdateFreqHz(50));    
-      } else {
-        m_climbMotor.setControl(m_climbRequest.withOutput(CC.CLIMBER_DUTY_CYCLE * 
-                                                        m_climbMotorFactor )
-                                            .withEnableFOC(true)
-                                            .withUpdateFreqHz(50));
+      if (! m_climberLimitSwitch.get()) {   // Limit switch is FALSE when triggered
+        m_climbMotorFactor = 0.0;
       }
     } else {
-       m_climbMotor.setControl(m_climbRequest.withOutput(0.0)
-                                            .withEnableFOC(true)
-                                            .withUpdateFreqHz(50));    
+      m_climbMotorFactor = 0.0;
     }
+
+    m_climbMotor.setControl(m_climbRequest.withOutput(CC.CLIMBER_DUTY_CYCLE * 
+                                                      m_climbMotorFactor )
+                                                      .withEnableFOC(true)
+                                                      .withUpdateFreqHz(50));
     SmartDashboard.putNumber("Elevator Pos", m_elevatorMotor.getEncoder().getPosition());
     SmartDashboard.putNumber("Elevator Amps", m_elevatorMotor.getOutputCurrent());
     SmartDashboard.putNumber("Climb Winch Amps", m_climbMotor.getSupplyCurrent().getValueAsDouble());

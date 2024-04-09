@@ -5,6 +5,7 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.NotableConstants.SC;
 import frc.robot.subsystems.MasterArmSubsystem;
 
 public class ScoreDistantSpeakerCmd extends Command {
@@ -23,7 +24,7 @@ public class ScoreDistantSpeakerCmd extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    m_noteConductor.prepForDistantSpeakerScore();
+    m_noteConductor.prepForDistantSpeakerScore(SC.SHOOTER_VOLTAGE_OUT_FAR);
     m_readyToScore = false;
   }
 

@@ -132,14 +132,15 @@ public class FileRecorder {
     }
 
     public void recordIntakeEvent(NoteRequest requestType,
+                                  double intakeMotorVelocity,
                                   long startTimeMillis,
                                   String state,
                                   int seqNo) {
         if (NOTE_LOGGING_ACTIVE) {
             try {
-                m_bufferedWriter.write("Intake"+m_separator+
+                m_bufferedWriter.write("Intake Req"+m_separator+
                                        requestType.toString()+m_separator+
-                                       /* Curr SP */ m_separator+
+                                       intakeMotorVelocity+m_separator+
                                        /* SP Err */  m_separator+
                                        F.df80.format(startTimeMillis)+m_separator+
                                        /* Elapsed time */ m_separator+

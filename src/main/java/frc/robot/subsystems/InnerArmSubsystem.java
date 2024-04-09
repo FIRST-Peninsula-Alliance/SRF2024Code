@@ -173,7 +173,7 @@ public class InnerArmSubsystem extends SubsystemBase {
       // general timeout has not yet expired.
         return false;
     } else {
-      // timeout has occured. Log event and force assume inner arm is at setpoint 
+      // timeout has occured. Log event and force assumption that inner arm is at setpoint 
       // in order to avoid "hanging" the state machine (hopefully it is close enough).
       if (LOGGING_ACTIVE) {
         m_fileRecorder.recordMoveEvent( "IA",
@@ -372,14 +372,5 @@ public class InnerArmSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per loop
     publishInnerArmData();
-    /*
-    if (Math.abs(m_innerArmSetpoint - IAC.INDEXED_SPEAKER_GOAL_POS) < .01) {
-      //if (m_innerArmCANcoder.getAbsolutePosition().getValueAsDouble() + .355 > .005) {
-      //  adjustInnerArmSetpoint(1, false );
-      if (m_innerArmCANcoder.getAbsolutePosition().getValueAsDouble() + .355 < -0.005) {
-        adjustInnerArmSetpoint(-1, false);
-      }
-    }
-    */
   }
 }

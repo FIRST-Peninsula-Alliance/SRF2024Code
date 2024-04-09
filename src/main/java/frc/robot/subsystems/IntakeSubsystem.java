@@ -78,6 +78,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_startTime = System.currentTimeMillis();
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordIntakeEvent(NoteRequest.INTAKE_ACQUIRE,
+                                       m_intakeMotor.getVelocity().getValueAsDouble(),
                                        m_startTime,
                                        m_currentStateName.get(),
                                        m_currentSeqNo.getAsInt());
@@ -87,6 +88,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void holdNote() {
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_HOLD,
+                                        m_intakeMotor.getVelocity().getValueAsDouble(),
                                         System.currentTimeMillis(),
                                         m_currentStateName.get(),
                                         m_currentSeqNo.getAsInt());
@@ -96,16 +98,17 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void ejectNote() {
-    if (LOGGING_ACTIVE) {
-      m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_EJECT,
-                                        m_startTime,
-                                        m_currentStateName.get(),
-                                        m_currentSeqNo.getAsInt());
-    }
     if (m_intakeSpeedFactor != IC.EJECT_NOTE) {
       m_intakeIsRunning = true;
       m_intakeSpeedFactor = IC.EJECT_NOTE;
       m_startTime = System.currentTimeMillis();
+      if (LOGGING_ACTIVE) {
+        m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_EJECT,
+                                          m_intakeMotor.getVelocity().getValueAsDouble(),
+                                          m_startTime,
+                                          m_currentStateName.get(),
+                                          m_currentSeqNo.getAsInt());
+      }
     }
   }
 
@@ -114,6 +117,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_intakeSpeedFactor = 0;
     if (LOGGING_ACTIVE) {
       m_fileRecorder.recordIntakeEvent( NoteRequest.INTAKE_STOP,
+                                        m_intakeMotor.getVelocity().getValueAsDouble(),
                                         System.currentTimeMillis(),
                                         m_currentStateName.get(),
                                         m_currentSeqNo.getAsInt());
@@ -228,7 +232,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void periodic() {
     if (m_intakeSpeedFactor == IC.EJECT_NOTE) {
       // Note ejection in progress - is it complete?
-      if (System.currentTimeMillis() - m_startTime > 1000) {
+      if (System.currentTimeMillis() - m_startTime > 800) {   // was 1000
         stopIntake();
       }
     }
