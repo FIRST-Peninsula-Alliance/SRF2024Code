@@ -42,38 +42,45 @@ public class WaveCmd extends Command {
   public void execute() {
     // rotate from side to side, unless wait time is > 0, in which case continue waving but
     // do not continue the robot's rotation until the pause has expired.
+    // Initializing m_waitTime to 1000 gives the master arm time to get into waving position
+    // before rotation starts.
+    // Note that after initialization, the inner arm wave speed is increased, and the
+    // magnitude of the wave simultaneously decreased, for the duration of each rotation pause.
+    // On pause expiration restore those settings to normal.
     if (m_waitTime > 0) {
       if ((System.currentTimeMillis() - m_startTime) < m_waitTime) {
-        // Robot is still paused for rotation, waving faster than normal. Just call drive
+        // Robot is still paused for rotation. Just call drive
         // with all arguments set to 0.0, and return.
         m_swerveDrive.drive(new Translation2d(0.0, 0.0),
                             0.0, 
                             true);
         return;
       } else {
-        // Wait time is over. Restore normal wave speed, and clear m_waitTime to allow
-        // rotation to resume.
+        // Rotation pause is over. Restore normal wave speed and magnitude, and clear 
+        // m_waitTime to allow rotation to resume.
         m_waitTime = 0;
         m_noteConductor.startWavingAtCrowd(IAC.NORMAL_WAVE_SPEED, IAC.NORMAL_WAVE_MAGNITURE);
       }
     }
 
+    // Not in a paused state, so continue rotating
+    m_swerveDrive.drive(new Translation2d(0.0, 0.0),
+                        (SDC.WAVE_SWERVE_ROTATE_SPEED * 
+                          SDC.MAX_ROBOT_ANG_VEL_RAD_PER_SEC * 
+                          m_waveRotationDirection), 
+                        true);
+
+    // And check if rotation limit to either side has been reached or exceeded
     m_currentHeading = m_swerveDrive.getYaw2d().getRotations();
     if (((m_waveRotationDirection == 1.0) && (m_currentHeading > SDC.WAVE_ROTATION_EXTENT))
         ||
         ((m_waveRotationDirection == -1.0) && (m_currentHeading < -SDC.WAVE_ROTATION_EXTENT))) {
-      // time to begin a rotation pause, and to start waving fast
+      // limit has been reached, so begin a rotation pause, and also start waving fast
       m_waveRotationDirection *= -1.0;
       m_startTime = System.currentTimeMillis();
       m_waitTime = SDC.WAVE_ROTATION_PAUSE_IN_MS;
       m_noteConductor.startWavingAtCrowd(IAC.FAST_WAVE_SPEED, IAC.FAST_WAVE_MAGNITURE);
     }
-
-    m_swerveDrive.drive(new Translation2d(0.0, 0.0),
-                        (SDC.WAVE_SWERVE_ROTATE_SPEED * 
-                         SDC.MAX_ROBOT_ANG_VEL_RAD_PER_SEC * 
-                         m_waveRotationDirection), 
-                        true);
   }
 
   // Called once the command ends or is interrupted.
