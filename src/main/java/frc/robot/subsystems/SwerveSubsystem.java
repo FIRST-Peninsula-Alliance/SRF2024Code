@@ -32,6 +32,9 @@ public class SwerveSubsystem extends SubsystemBase {
     private SwerveModule[] m_swerveMods;
     private SwerveModuleState[] m_states = new SwerveModuleState[4];
     private Pigeon2 m_gyro;
+    private Rotation2d m_gyroYaw2d;
+    private Rotation2d m_zeroYaw2D = new Rotation2d();      // default is 0 degrees.
+
     private Translation2d m_cenOfRotationOffset = SDC.REL_POS2D_CEN;
     private boolean m_isFieldOriented = true;       // default is Field Oriented on start
     private static double m_varMaxOutputFactor = 1.0;      // A temporary driver settable speed 
@@ -115,7 +118,6 @@ public class SwerveSubsystem extends SubsystemBase {
     public void drive(Translation2d translation, 
                       double rotation, 
                       boolean isOpenLoop) {
-        // Output pulse on DIO_1 for oscilloscope viewing
         translation = translation.times(m_varMaxOutputFactor * m_fixedMaxTranslationOutput);
         rotation = rotation * m_varMaxOutputFactor * m_fixedMaxRotationOutput;
        
@@ -216,9 +218,20 @@ public class SwerveSubsystem extends SubsystemBase {
         m_gyro.setYaw(newHeadingDeg);
     }
 
-    public Rotation2d  getYaw2d() {
+    //
+    public Rotation2d getYaw2d() {
+        /*
+        // Under Phoenix6, using getYaw works, but getAngle() (with +CW, -CCW convention, so 
+        // INVERT_GYRO wouuld need to be set true) or getRotation2d() (which uses the standard
+        // WPILib convention of +CCW, -CW, so INVERT_GYRO can remain false) are both available with 
+        // automatic refresh. 
+        // Returning m_yaw.plus(m_zeroYaw2d) just ensures the returned value lies in the 
+        // range -PI to +PI.
         return (GC.INVERT_GYRO) ? Rotation2d.fromDegrees(360 - m_gyro.getYaw().getValueAsDouble())
                                   : Rotation2d.fromDegrees(m_gyro.getYaw().getValueAsDouble());
+        */
+        m_gyroYaw2d = m_gyro.getRotation2d();
+        return m_gyroYaw2d.plus(m_zeroYaw2D);
     }
 /*
     public Rotation2d getPitch() {
@@ -274,7 +287,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public void publishSwerveDriveData() {
             m_gyroYawEntry.setString(F.df1.format(getYaw2d().getDegrees()));
-            m_gyroRawYawEntry.setString(F.df1.format(m_gyro.getYaw().getValueAsDouble()));
+            // m_gyroRawYawEntry.setString(F.df1.format(m_gyro.getYaw().getValueAsDouble()));
+            m_gyroRawYawEntry.setString(F.df1.format(m_gyro.getRotation2d().getDegrees()));
             m_odometryPoseXEntry.setString(F.df2.format(m_location.getX()));
             m_odometryPoseYEntry.setString(F.df2.format(m_location.getY()));           
             m_odometryHeadingEntry.setString(F.df2.format(m_location.getRotation().getRadians()));
@@ -286,7 +300,6 @@ public class SwerveSubsystem extends SubsystemBase {
             mod.publishModuleData();
         }
     }
-
 
     @Override
     public void periodic() {

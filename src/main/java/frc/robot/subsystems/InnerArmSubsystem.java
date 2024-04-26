@@ -16,9 +16,11 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -41,6 +43,9 @@ import frc.robot.NotableConstants.IAC;
 
 public class InnerArmSubsystem extends SubsystemBase {
   private TalonFX m_innerArmMotor = new TalonFX(IAC.INNER_ARM_FALCON_ID, Constants.CANIVORE_BUS_NAME);
+  private TalonFXConfiguration m_innerArmConfig;
+  private MotorOutputConfigs m_motorOutputConfig;
+
   private CANcoder m_innerArmCANcoder = new CANcoder(IAC.INNER_ARM_CANCODER_ID, Constants.CANIVORE_BUS_NAME);
 
   private double m_innerArmSetpoint;
@@ -49,9 +54,13 @@ public class InnerArmSubsystem extends SubsystemBase {
   private double m_temp;
   private boolean m_isDistantSpeakerShot = false;
 
+  // Motion control for when Position PID is needed - use motion magic
   private final MotionMagicVoltage m_innerArmMagicCtrl = new MotionMagicVoltage(0.0)
                                                                                 .withSlot(0)
                                                                                 .withEnableFOC(true);
+  // Motion control for when open loop percent output drive is needed
+  private final DutyCycleOut m_innerArmDutyCycleCtrl = new DutyCycleOut(0.0)
+                                                                        .withEnableFOC(true);
   private long m_startTime;
 
   private GenericEntry m_magnetOffsetEntry;
@@ -108,39 +117,55 @@ public class InnerArmSubsystem extends SubsystemBase {
   }
 
   /*********************************
-   * check for reaching setpoints
+   * checks for reaching setpoints
    *********************************/
 
   public boolean innerArmIsVerticalUp() {
-    return innerArmIsAt(IAC.VERTICAL_UP_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
+    return innerArmIsAt(IAC.VERTICAL_UP_POS, 
+                        IAC.ALLOWED_INNER_ARM_POS_ERROR,
+                        IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
 
   public boolean innerArmIsAtBumperContactPos() {
-    return innerArmIsAt(IAC.BUMPER_CONTACT_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
+    return innerArmIsAt(IAC.BUMPER_CONTACT_POS, 
+                        IAC.ALLOWED_INNER_ARM_POS_ERROR, 
+                        IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
 
   public boolean innerArmIsAtPickupPos() {
-    return innerArmIsAt(IAC.NOTE_PICKUP_POS, IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
+    return innerArmIsAt(IAC.NOTE_PICKUP_POS, 
+                        IAC.ALLOWED_INNER_ARM_POS_ERROR,
+                        IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
   }
 
   public boolean innerArmIsAtDistantSpeakerPos() {
-    return innerArmIsAt(IAC.DISTANT_SPEAKER_GOAL_POS, IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
+    return innerArmIsAt(IAC.DISTANT_SPEAKER_GOAL_POS, 
+                        IAC.ALLOWED_INNER_ARM_POS_ERROR,
+                        IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
   }
       
   public boolean innerArmIsAtIndexedSpeakerPos() {
-    return innerArmIsAt(IAC.INDEXED_SPEAKER_GOAL_POS, IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
+    return innerArmIsAt(IAC.INDEXED_SPEAKER_GOAL_POS, 
+                        IAC.ALLOWED_INNER_ARM_POS_ERROR,
+                        IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
   }
 
   public boolean innerArmIsHorizontalBackPos() {
-    return innerArmIsAt(IAC.HORIZONTAL_BACK_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
+    return innerArmIsAt(IAC.HORIZONTAL_BACK_POS, 
+                        IAC.ALLOWED_INNER_ARM_POS_ERROR,
+                        IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
 
   public boolean innerArmIsHorizontalForwardPos() {
-    return innerArmIsAt(IAC.HORIZONTAL_FORWARD_POS, IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
+    return innerArmIsAt(IAC.HORIZONTAL_FORWARD_POS, 
+                        IAC.ALLOWED_INNER_ARM_POS_ERROR,
+                        IAC.ALLOWED_MILLIS_IA_SMALL_MOVE);
   }
   
   public boolean innerArmIsAtAmpScoringPos() {
-    return innerArmIsAt(IAC.AMP_GOAL_POS, IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
+    return innerArmIsAt(IAC.AMP_GOAL_POS, 
+                        IAC.ALLOWED_INNER_ARM_POS_ERROR,
+                        IAC.ALLOWED_MILLIS_IA_LARGE_MOVE);
   }
 
   // getAbsInnerArmPos returns the InnerArmEncoder sensor position
@@ -151,11 +176,13 @@ public class InnerArmSubsystem extends SubsystemBase {
     return(m_innerArmCANcoder.getAbsolutePosition().getValueAsDouble());
   }
 
-  public boolean innerArmIsAt(double position, long timeoutDuration) {
+  public boolean innerArmIsAt(double position, 
+                              double allowedError,
+                              long timeoutDuration) {
     m_positionError = position - getAbsInnerArmPos();
     m_elapsedTime = System.currentTimeMillis() - m_startTime;
 
-    if (Math.abs(m_positionError) < IAC.ALLOWED_INNER_ARM_POS_ERROR) {
+    if (Math.abs(m_positionError) < allowedError) {
       if (LOGGING_ACTIVE) {
         m_fileRecorder.recordMoveEvent( "IA",
                                         NoteEvent.SETPOINT_REACHED,
@@ -188,7 +215,17 @@ public class InnerArmSubsystem extends SubsystemBase {
       return true;
     }
   }
+
+  /*********************************************************************
+   * drive() method is for simple duty cycle control of inner arm motion
+   * Other than testing, it is used only for "waving" the inner arm during 
+   * demonstrations or parade type events.
+   **********************************************************************/
   
+  public void drive(double speed) {
+    m_innerArmMotor.setControl(m_innerArmDutyCycleCtrl.withOutput(speed));
+  }
+
   /*****************************************
    * goto<various inner arm positions>
    * Called only from Master Arm sequencer.
@@ -215,12 +252,7 @@ public class InnerArmSubsystem extends SubsystemBase {
   }
 
   public void gotoVerticalUpPos() {
-    //if (getAbsInnerArmPos() > IAC.VERTICAL_UP_POS) {
-    //  m_innerArmSetpoint = IAC.VERTICAL_UP_POS * IAC.INNER_ARM_CANCODER_TO_AXLE_RATIO;
-    //} else {
-      m_innerArmSetpoint = IAC.VERTICAL_UP_POS;
-    //}
-    gotoPosition(m_innerArmSetpoint);
+    gotoPosition(IAC.VERTICAL_UP_POS);
   }
   
   public void gotoVerticalDownPos() {
@@ -260,17 +292,20 @@ public class InnerArmSubsystem extends SubsystemBase {
    * Configure Hardware methods 
    ****************************************/
   private void configInnerArmMotor() {
-    var closedLoopConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(IAC.INNER_ARM_CLOSED_LOOP_RAMP_PERIOD)
-                                                        .withVoltageClosedLoopRampPeriod(IAC.INNER_ARM_CLOSED_LOOP_RAMP_PERIOD)
-                                                        .withTorqueClosedLoopRampPeriod(0);
+    var closedLoopRampsConfig = new ClosedLoopRampsConfigs().withDutyCycleClosedLoopRampPeriod(IAC.INNER_ARM_CLOSED_LOOP_RAMP_PERIOD)
+                                                            .withVoltageClosedLoopRampPeriod(IAC.INNER_ARM_CLOSED_LOOP_RAMP_PERIOD)
+                                                            .withTorqueClosedLoopRampPeriod(0);
+    var openLoopRampsConfig = new OpenLoopRampsConfigs().withDutyCycleOpenLoopRampPeriod(IAC.INNER_ARM_OPEN_LOOP_RAMP_PERIOD)
+                                                        .withVoltageOpenLoopRampPeriod(IAC.INNER_ARM_OPEN_LOOP_RAMP_PERIOD)
+                                                        .withTorqueOpenLoopRampPeriod(0);
     var feedbackConfig = new FeedbackConfigs().withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
                                               .withFeedbackRemoteSensorID(IAC.INNER_ARM_CANCODER_ID)
                                               .withSensorToMechanismRatio(IAC.INNER_ARM_CANCODER_TO_AXLE_RATIO)
                                               .withRotorToSensorRatio(IAC.INNER_ARM_ROTOR_TO_CANCODER_RATIO);
-    var motorOutputConfig = new MotorOutputConfigs().withNeutralMode(IAC.INNER_ARM_MOTOR_NEUTRAL_MODE)
-                                                    .withInverted(IAC.INNER_ARM_MOTOR_INVERT)
-                                                    .withPeakForwardDutyCycle(IAC.INNER_ARM_OUTPUT_LIMIT_FACTOR)
-                                                    .withPeakReverseDutyCycle(-IAC.INNER_ARM_OUTPUT_LIMIT_FACTOR);
+    m_motorOutputConfig = new MotorOutputConfigs().withNeutralMode(IAC.INNER_ARM_MOTOR_NEUTRAL_MODE)
+                                                  .withInverted(IAC.INNER_ARM_MOTOR_INVERT)
+                                                  .withPeakForwardDutyCycle(IAC.INNER_ARM_OUTPUT_LIMIT_FACTOR)
+                                                  .withPeakReverseDutyCycle(-IAC.INNER_ARM_OUTPUT_LIMIT_FACTOR);
     var currentLimitConfig = new CurrentLimitsConfigs().withSupplyCurrentLimit(IAC.INNER_ARM_CONT_CURRENT_LIMIT)
                                                        .withSupplyCurrentThreshold(IAC.INNER_ARM_PEAK_CURRENT_LIMIT)
                                                        .withSupplyTimeThreshold(IAC.INNER_ARM_PEAK_CURRENT_DURATION)
@@ -294,20 +329,37 @@ public class InnerArmSubsystem extends SubsystemBase {
                                                                     .withMotionMagicJerk(IAC.INNER_ARM_MOTION_MAGIC_JERK)
                                                                     .withMotionMagicExpo_kA(IAC.INNER_ARM_MOTION_MAGIC_kA)
                                                                     .withMotionMagicExpo_kV(IAC.INNER_ARM_MOTION_MAGIC_kV);
-    var innerArmConfig = new TalonFXConfiguration().withFeedback(feedbackConfig)
-                                                   .withMotorOutput(motorOutputConfig)
-                                                   .withCurrentLimits(currentLimitConfig)
-                                                   .withClosedLoopRamps(closedLoopConfig)
-                                                   .withSoftwareLimitSwitch(softwareLimitSwitchConfig)
-                                                   .withSlot0(pid0Config)
-                                                   .withMotionMagic(motionMagicConfig);
-    StatusCode status = m_innerArmMotor.getConfigurator().apply(innerArmConfig);
+    m_innerArmConfig = new TalonFXConfiguration().withFeedback(feedbackConfig)
+                                                 .withMotorOutput(m_motorOutputConfig)
+                                                 .withCurrentLimits(currentLimitConfig)
+                                                 .withClosedLoopRamps(closedLoopRampsConfig)
+                                                 .withOpenLoopRamps(openLoopRampsConfig)
+                                                 .withSoftwareLimitSwitch(softwareLimitSwitchConfig)
+                                                 .withSlot0(pid0Config)
+                                                 .withMotionMagic(motionMagicConfig);
+    StatusCode status = m_innerArmMotor.getConfigurator().apply(m_innerArmConfig);
 
     if (! status.isOK() ) {
       System.out.println("Failed to apply INNER_ARM configs. Error code: "+status.toString());
     }
   }
-  
+
+  // Utility for changing the maximum inner arm speed - used for parade functions where waving to
+  // crowd with the inneer arm needs to be slower than competition note handling.
+  public void setMaxInnerArmSpeed(double outputLimit) {
+    outputLimit = Math.abs(outputLimit);
+    if (outputLimit > 1.0) {
+      outputLimit = 1.0;
+    }
+    m_motorOutputConfig.PeakForwardDutyCycle = outputLimit;
+    m_motorOutputConfig.PeakReverseDutyCycle = -outputLimit;
+    StatusCode status = m_innerArmMotor.getConfigurator().apply(m_innerArmConfig.withMotorOutput(m_motorOutputConfig));
+
+    if (! status.isOK() ) {
+      System.out.println("Failed to change MotorOutputConfigs. Error code: "+status.toString());
+    }
+  }
+    
   private void configInnerArmCANcoder() {
     var magnetSensorConfigs = new MagnetSensorConfigs().withAbsoluteSensorRange(IAC.INNER_ARM_CANCODER_RANGE)
                                                        .withSensorDirection(IAC.INNER_ARM_CANCODER_DIR)

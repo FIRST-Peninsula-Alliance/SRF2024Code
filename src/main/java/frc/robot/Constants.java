@@ -55,8 +55,11 @@ public final class Constants {
         public static final boolean INVERT_GYRO = false; // In phoenix6, Pigeon2.getAngle() api
                                                         // returns heading, but it increases with
                                                         // CW rotation, the opposite of WPILib
-                                                        // convention, which is CCW+ CW-
-                                                        // So it must be inverted.
+                                                        // convention, which is CCW+ CW-,
+                                                        // So if using getAngle(), set this to true.
+                                                        // However, getRotation2d() instead can be used
+                                                        // to return angles suited to WPILib
+                                                        // conventions, with no gyro inversion.
 
         // if NavX, use NavX library to init (no need for an ID), but be sure to
         // set INVERT_GYRO = true; // because NavX measures CCW as negative.
@@ -101,7 +104,7 @@ public final class Constants {
         // Translation2d coordinates of each corner, plus the center of the robot.
         // See SwerveSubsystem. Corner rotations are especially useful for blocking 
         // while playing defense, and sometimes even for evasion while on offense, but 
-        // requires and ties up a significant number of GameController button resources
+        // requires (and ties up) a significant number of GameController button resources
         // (min 4 buttons, or 5 if not using temporary "active only when held" buttons) 
         // so doing this may not be practical for a given season.
         public static final Translation2d   REL_POS2D_CEN = new Translation2d(0, 0);
@@ -113,7 +116,7 @@ public final class Constants {
         // Wheel angles for Tsunami "park"
         public static final double T_PARK_ANGLE_LEFT_DEG = 45.0;
         public static final double T_PARK_ANGLE_RIGHT_DEG = -45.0;
-        
+
         // Differentiate SDS module types MK4 and MK4i
         // which are used with the Black Knight and Tsunami chassis, respectively
         // 
@@ -172,7 +175,7 @@ public final class Constants {
             Translation2d relPos2D_BL = T_BL;
             Translation2d relPos2D_BR = T_BR;
             // TODO: measure and enter Tsunami absolute wheel angle offsets, in degrees, here
-            Rotation2d absOffsetFL = Rotation2d.fromDegrees(58.5);
+            Rotation2d absOffsetFL = Rotation2d.fromDegrees(121.1);
             Rotation2d absOffsetFR = Rotation2d.fromDegrees(335.41);
             Rotation2d absOffsetBL = Rotation2d.fromDegrees(261.7);
             Rotation2d absOffsetBR = Rotation2d.fromDegrees(35.58);
@@ -329,6 +332,14 @@ public final class Constants {
         public static final CANSparkMax.IdleMode STEER_MOTOR_NEUTRAL_MODE = CANSparkMax.IdleMode.kCoast;
         public static final NeutralModeValue DRIVE_MOTOR_NEUTRAL_MODE = NeutralModeValue.Brake;
 
+        // Swerve rotate speed and extent during a parade WAVE function
+        public static final double WAVE_SWERVE_ROTATE_SPEED = 0.175;    // Percent simulated joystick input
+        public static final double WAVE_ROTATION_EXTENT = 55/360;       // Rotation units per side, relative to 0 heading
+        public static final long   WAVE_ROTATION_PAUSE_IN_MS = 1500;    // Time in MS to stop rotating at limit
+                                                                        // and wave faster, before reverting to
+                                                                        // normal wave and rotating to other side
+                                                                        // See WaveCmd.java
+                                                                        
         // Finally, declare constants to define and allow addressing the (typically 4)
         // individual module components, including the Shuffleboard coordinates
         // embedded in the associated ShuffleboardLayout objects created for each

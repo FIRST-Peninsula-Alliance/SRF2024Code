@@ -62,6 +62,8 @@ public class MasterArmSubsystem extends SubsystemBase {
     WAIT_TO_SCORE_AMP,
     SCORE_AMP,
     RETURN_FROM_AMP,
+    PREP_FOR_WAVING,
+    WAVING_AT_CROWD,
     DEBUG_HOLD;
   }
 
@@ -125,6 +127,11 @@ public class MasterArmSubsystem extends SubsystemBase {
   private boolean m_noWaitToScore;
   private boolean m_masterArmIsReadyToShoot;
   private boolean m_innerArmIsReadyToShoot;
+  private double m_waveDirection;     // + or - 1.0, used to control up and down reversals 
+                                      // of inner arm drive to create "wave" during parade
+  private double m_waveSpeed;         // Percent output motor drive for wave
+  private double m_waveMagnitude;     // Rotations away from 0, per side, during wave
+  private boolean m_cancelWave = false;   // flag used to cancel wave
 
   /******************************************************
    * Constructor for a new MasterArmSubsystem. 
@@ -310,7 +317,7 @@ public class MasterArmSubsystem extends SubsystemBase {
     // will then pull the arms back into the robot in IDLE state, except in the
     // AMP shot case the operator will need to pull RT first, as in a normal arm
     // return.
-    switch(m_nowPlaying) {
+    switch (m_nowPlaying) {
       case WAIT_FOR_NOTE:
         m_intakeSubsystem.ejectNote();
         // Change currentSeqNo to 20 so that the intake
@@ -359,8 +366,10 @@ public class MasterArmSubsystem extends SubsystemBase {
         // any Note and return.
         break;
       
+      case PREP_FOR_WAVING:
+      case WAVING_AT_CROWD:
       default:
-        // Nothing to do except for the above states
+        // Nothing to do for these states. To cancel waving, use ALT-X (cancelNoteAction())
         break;
     }
   }
@@ -370,7 +379,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    * For handling an unwanted note, use discardNote()
    **********************************************************/
   public void cancelNoteAction() {
-    switch(m_nowPlaying) {
+    switch (m_nowPlaying) {
       case NOTE_HANDLER_IDLE:
       case WAIT_FOR_SPECIFIED_GOAL:
         break;
@@ -413,8 +422,8 @@ public class MasterArmSubsystem extends SubsystemBase {
       case WAIT_TO_SCORE_AMP:
         // no ideal way to recover. Best is just to dump the Note,
         // then let operator trigger a return when safe
-        m_noWaitToScore = true;
         changeNoteStateTo(Repetoire.SCORE_AMP);
+        m_noWaitToScore = true;
         break;
 
       case RETRIEVE_NOTE:
@@ -424,21 +433,75 @@ public class MasterArmSubsystem extends SubsystemBase {
         // do nothing, let whichever process is active finish normally
         break;
 
+      case PREP_FOR_WAVING:
+        m_cancelWave = true;
+        break;
+
+      case WAVING_AT_CROWD:
+        stopWavingAtCrowd();
+        break;
+        
       case DEBUG_HOLD:
       default:
         // Nothing to do
         break;
     }
   }
+  
+  /*****************************************************
+   * General Utility routines, and supporting methods for
+   * parade activities like "waving at crowds".
+   * **************************************************/
+  
+   // waveAtCrowd will raise the masterArm to the Amp score
+   // position, then ocillate the inner arm about the 0 position
+   // (horizontal forward) at the rate (in units of max percent
+   // output) and rotation (symetrically away from 0, + and -)
+   // specified by the caller. Be sure to call stopWavingAtCrowd() in order
+   // to restore the inner Arm default movement and allow the masterArm
+   // to be lowered. In fact, call stopWavingAtCrowd() whenever Disable is
+   // pressed and use state information to decide whether any action is needed.
+   public void startWavingAtCrowd(double speed, double rotation) {
+    // the folloing vetting is redundant, but won't hurt anything.
+    // Parade code is not time or resource critical!
 
-  // Called from RobotContainer on ALT+Start button press
-  public void closeRecording() {
-    if (NOTE_LOGGING_ACTIVE) {
-      m_fileRecorder.closeFileRecorder();
+    m_cancelWave = false;
+
+    m_waveSpeed = Math.abs(speed);
+    if (m_waveSpeed > 0.9) {
+      m_waveSpeed = 0.9;
     }
-    if (Robot.isCtreSignalLoggerActive()) {
-      Robot.stopCtreSignalLogger();
+
+    m_waveMagnitude = Math.abs(rotation);
+    if (m_waveMagnitude > 30.0/360.0) {
+      m_waveMagnitude = 30.0/360.0;
     }
+
+    if ((m_nowPlaying == Repetoire.NOTE_HANDLER_IDLE)
+        ||
+        (m_nowPlaying == Repetoire.WAIT_FOR_SPECIFIED_GOAL)) {
+      changeNoteStateTo(Repetoire.PREP_FOR_WAVING);
+    } else if ((m_nowPlaying == Repetoire.WAVING_AT_CROWD)
+               ||
+               (m_nowPlaying == Repetoire.PREP_FOR_WAVING)) {
+      m_waveSpeed = speed;
+      m_waveMagnitude = rotation;
+      m_waveDirection = 1.0;
+    } else {
+      System.out.println(m_nowPlaying.toString()+" not valid for switch to Waving");
+    }
+  }
+
+  public void stopWavingAtCrowd() {
+    if (m_nowPlaying == Repetoire.WAVING_AT_CROWD) {
+      changeNoteStateTo(Repetoire.RETURN_FROM_AMP);
+    } else if (m_nowPlaying == Repetoire.PREP_FOR_WAVING) {
+      m_cancelWave = true;
+    }
+  }
+
+  public boolean isWavingAtCrowd() {
+    return (m_nowPlaying == Repetoire.PREP_FOR_WAVING) || (m_nowPlaying == Repetoire.WAVING_AT_CROWD);
   }
 
   /*********************************************
@@ -469,40 +532,33 @@ public class MasterArmSubsystem extends SubsystemBase {
     return m_nowPlaying == Repetoire.WAIT_TO_SCORE_AMP;
   }
 
-  /*****************************************************
-   * Utility to make ShooterSubsystem handle available
-   * to RobotContainer
+  /* **************************************************
+   * getShooterSubsystem makes ShooterSubsystem handle 
+   * available to RobotContainer for tuning aim and
+   * velocity - not needed for competition
    * ***************************************************/
    // public ShooterSubsystem getShooterSubsystem() {
    //   return m_shooterSubsystem;
    // }
 
-  /*************************************************************
-   * @param setpoint
-   * gotoPosition() method directs MasterArm to a desired 
-   * position. The setpoint argument is in absolute 
-   * rotation units, and will generally be limited 
-   * to those pre-defined in NotableConstants.java.
-   **************************************************************/
-  public void gotoPosition(double setpoint) {
-    m_currentMasterArmSetpoint = setpoint;
-    m_masterArmMotor.setControl(m_masterArmMotionMagicCtrl.withPosition(setpoint));
-    m_startTime = System.currentTimeMillis();
+   // closeRecording is called from RobotContainer via
+   // ALT+Start button binding - this can ensure that the
+   // log file (if any) is closed cleanly 
+  public void closeRecording() {
     if (NOTE_LOGGING_ACTIVE) {
-      m_fileRecorder.recordReqEvent("MA",
-                                    NoteRequest.MOVE_MASTER_ARM,
-                                    m_currentMasterArmSetpoint,
-                                    m_startTime,
-                                    m_nowPlaying.toString(),
-                                    m_currentSeqNo);
+      m_fileRecorder.closeFileRecorder();
+    }
+    if (Robot.isCtreSignalLoggerActive()) {
+      Robot.stopCtreSignalLogger();
     }
   }
 
   /************************************************************************
-   * Utilities for slightly adjusting position of MasterArm for use
-   * when developing/tweaking standard setpoints. Perhaps potentially
-   * useful during match play if the robot gets out of alignment, but that 
-   * would be an emergency use, very inefficient.
+   * Utilities for slightly adjusting position of MasterArm, inner arm,
+   * and shooter aim for use when developing/tweaking standard setpoints, 
+   * and potentially useful during match play if the robot gets out of 
+   * alignment, but that would be an emergency manual adjustment per note
+   * handled, very inefficient.
    * All take positions in Rotation units.
    * Redundancies in setting m_currentMasterArmSetpoint is a side effect of
    * using the normal gotoPosition() routine after adjusting the setpoint,
@@ -565,6 +621,27 @@ public class MasterArmSubsystem extends SubsystemBase {
 
   public void adjustShooterAim(double direction) {
     m_shooterSubsystem.adjustShooterAim(direction);
+  }
+
+  /*************************************************************
+   * @param setpoint
+   * gotoPosition() method directs MasterArm to a desired 
+   * position. The setpoint argument is in absolute 
+   * rotation units, and will generally be limited 
+   * to those pre-defined in NotableConstants.java.
+   **************************************************************/
+  public void gotoPosition(double setpoint) {
+    m_currentMasterArmSetpoint = setpoint;
+    m_masterArmMotor.setControl(m_masterArmMotionMagicCtrl.withPosition(setpoint));
+    m_startTime = System.currentTimeMillis();
+    if (NOTE_LOGGING_ACTIVE) {
+      m_fileRecorder.recordReqEvent("MA",
+                                    NoteRequest.MOVE_MASTER_ARM,
+                                    m_currentMasterArmSetpoint,
+                                    m_startTime,
+                                    m_nowPlaying.toString(),
+                                    m_currentSeqNo);
+    }
   }
 
   /********************************************************************************
@@ -759,7 +836,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    /*********************************************************************
    * Master Arm Sequencer
    * 
-   * Sequences not just the master arm movements, but the entire suite of
+   * Sequences not just the master arm movements, but the entire suite  of
    * Note Handler subsystems.
    * Called once per loop from periodic()
    *********************************************************************/
@@ -807,6 +884,7 @@ public class MasterArmSubsystem extends SubsystemBase {
         break;
 
       case PREP_FOR_AMP_GOAL:
+      case PREP_FOR_WAVING:
         processAmpScorePrep();
         break;
 
@@ -824,6 +902,10 @@ public class MasterArmSubsystem extends SubsystemBase {
 
       case RETURN_FROM_AMP:
         processReturnFromAmp();
+        break;
+
+      case WAVING_AT_CROWD:
+        processWavingAtCrowd();
         break;
 
       case DEBUG_HOLD:
@@ -964,7 +1046,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    * PROCESS WAIT FOR NOTE
    ********************************************/
   private void processWaitForNote() {
-    switch(m_currentSeqNo) {
+    switch (m_currentSeqNo) {
       case 1:
         if (m_intakeSubsystem.isNoteAcquired()) {
           retrieveNote();
@@ -1065,7 +1147,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    * PROCESS WAIT FOR SPECIFIED GOAL
    ************************************************/
   public void processWaitForSpecifiedGoal() {
-    switch(m_currentSeqNo) {
+    switch (m_currentSeqNo) {
       case 1:
         // Do nothing, just wait with inner arms vertical up for external trigger
         break;
@@ -1109,7 +1191,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    * PROCESS SPEAKER SCORE PREP
    *****************************************/
   private void processSpeakerScorePrep() {
-    switch(m_currentSeqNo) {
+    switch (m_currentSeqNo) {
       case 1:
         // in this instance, we can do a lot in parallel, then wait for all to complete
         m_shooterSubsystem.prepareToShoot(m_isDistantSpeakerShot);
@@ -1192,7 +1274,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    * PROCESS SCORING AT SPEAKER
    **************************************/
   private void processScoringSpeaker() {
-    switch(m_currentSeqNo) {
+    switch (m_currentSeqNo) {
       case 1: 
         m_intakeSubsystem.ejectNote();
         m_shooterSubsystem.shotInitiated();
@@ -1267,7 +1349,7 @@ public class MasterArmSubsystem extends SubsystemBase {
  * PROCESS PREP FOR AMP SCORE
  *****************************************/
   private void processAmpScorePrep() {
-   switch(m_currentSeqNo) {
+   switch (m_currentSeqNo) {
       case 1: 
         m_innerArmSubsystem.gotoVerticalUpPos();                // set innerArm moving, then wait for it
         changeSeqNoTo(2);
@@ -1310,7 +1392,16 @@ public class MasterArmSubsystem extends SubsystemBase {
 
       case 7:
         if (isMasterArmAt(MAC.AMP_SHOT_POS, MAC.ALLOWED_MILLIS_MA_SMALL_MOVE)) {
-          changeNoteStateTo(Repetoire.WAIT_TO_SCORE_AMP);
+          if (m_nowPlaying == Repetoire.PREP_FOR_AMP_GOAL) {
+            changeNoteStateTo(Repetoire.WAIT_TO_SCORE_AMP);
+          } else if (m_nowPlaying == Repetoire.PREP_FOR_WAVING) {
+            if (m_cancelWave) {
+              changeNoteStateTo(Repetoire.RETURN_FROM_AMP);
+              m_cancelWave = false;
+            } else {
+              changeNoteStateTo(Repetoire.WAVING_AT_CROWD);
+            }
+          }
         }
         break;
 
@@ -1327,7 +1418,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    * PROCESS SCORING AT AMP
    ***********************************/
   private void processScoringAmp() {
-    switch(m_currentSeqNo) {
+    switch (m_currentSeqNo) {
       case 1: 
         m_intakeSubsystem.ejectNote();
         m_startTime = System.currentTimeMillis();
@@ -1356,7 +1447,7 @@ public class MasterArmSubsystem extends SubsystemBase {
    * PROCESS RETURN FROM AMP
    *****************************/
   private void processReturnFromAmp() {
-   switch(m_currentSeqNo) {
+   switch (m_currentSeqNo) {
     case 1:
       if (m_isSafeToReturn) {
         gotoPosition(MAC.HIGH_SAFE_TO_ROTATE_POS);
@@ -1405,6 +1496,18 @@ public class MasterArmSubsystem extends SubsystemBase {
       System.out.println("Invalid SeqNo in processReturnFromAmp: "+m_currentSeqNo);
       break;
     }
+  }
+
+  /******************************************************
+   * processWavingAtCrowd()
+   ******************************************************/
+  public void processWavingAtCrowd() {
+    if (((m_waveDirection == 1.0) && (m_innerArmSubsystem.getAbsInnerArmPos() > m_waveMagnitude))
+        ||
+        ((m_waveDirection == -1.0) && (m_innerArmSubsystem.getAbsInnerArmPos() < -m_waveMagnitude))) {
+      m_waveDirection *= -1.0;
+    }
+    m_innerArmSubsystem.drive(m_waveDirection * m_waveSpeed);
   }
 
    /******************************************************

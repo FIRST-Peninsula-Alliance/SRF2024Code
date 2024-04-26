@@ -107,7 +107,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final InvertedValue INNER_ARM_MOTOR_INVERT = InvertedValue.Clockwise_Positive;
         
         public static final int INNER_ARM_CANCODER_ID = 11;
-        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = 0.201263;           // was 0.20593;     // was -0.0213;    // was -0.242625;
+        public static final double INNER_ARM_CANCODER_MAGNET_OFFSET = 0.21096;           // was 0.20593;     // was -0.0213;    // was -0.242625;
         public static final AbsoluteSensorRangeValue INNER_ARM_CANCODER_RANGE = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         public static final SensorDirectionValue INNER_ARM_CANCODER_DIR = SensorDirectionValue.CounterClockwise_Positive;
 
@@ -140,6 +140,12 @@ public final class NotableConstants {           // As in all these constants are
         public static final double INNER_ARM_MOTION_MAGIC_JERK  = 25.0;
 
         public static final double INNER_ARM_OUTPUT_LIMIT_FACTOR = 1.0;
+
+        public static final double NORMAL_WAVE_SPEED = 0.4;
+        public static final double FAST_WAVE_SPEED = 0.8;
+        public static final double NORMAL_WAVE_MAGNITURE = 25.0/360.0;  // Rotations +/- about horizontal (0 position)
+        public static final double FAST_WAVE_MAGNITURE = 12.5/360.0;  // Rotations +/- about horizontal (0 position)
+
 
         // VERTICAL for the inner arm means intake fingers pointing up,
         // and rotation up from the defined Zero position (fingers horizontal

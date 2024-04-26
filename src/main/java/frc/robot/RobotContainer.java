@@ -111,6 +111,11 @@ public class RobotContainer {
         return m_xbox.getHID();
     }
 
+    public void respondToBeingDisabled() {
+        m_masterArmSubsystem.stopWavingAtCrowd();
+        m_masterArmSubsystem.closeRecording();
+    }
+
     /***********************************************
      * Button Bindings defines the operator UI
      ***********************************************/
@@ -142,7 +147,7 @@ public class RobotContainer {
         //    R Joystick Button     => Set Robot Oriented drive
         //    Back                  => Zero the Gyro
         //    Start                 => Single step through Note states if in debug mode
-        //    ALT + Start           => Close Note Handler file logging.
+        //    ALT + Start           => Start Waving at Crowd (for parades).
         //    ALT + Back            => Simulate "end of match" period
         //    Left Trigger          => Simulate note acquired
         //    ALT + POV_UP          => extend elevator @ fixed speed when held (can get slower speed with Right Bumper)
@@ -174,7 +179,7 @@ public class RobotContainer {
         ALT.and(m_xbox.rightBumper()).onTrue(new InstantCommand(()-> m_swerveSubsystem.setVarMaxOutputFactor(.2)));
         m_xbox.rightBumper().onFalse(new InstantCommand(()-> m_swerveSubsystem.setVarMaxOutputFactor(1.0)));
 
-        m_xbox.x().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.discardNote()));  // was cancelNoteAction(), but that was never used
+        m_xbox.x().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.cancelNoteAction()));
         // Swerve park 
         ALT.and(m_xbox.x()).onTrue(m_parkCmd);
         
@@ -187,13 +192,14 @@ public class RobotContainer {
         ALT.and(m_xbox.rightTrigger(0.5)).onTrue(new InstantCommand(()->m_masterArmSubsystem.discardNote()));
         m_xbox.rightTrigger(0.5).and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.scoreNote()));
         m_xbox.start().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.stepPastDebugHold()));
-        ALT.and(m_xbox.start()).onTrue(new InstantCommand(()->m_masterArmSubsystem.closeRecording()));
+        ALT.and(m_xbox.start()).onTrue(new WaveCmd(m_swerveSubsystem, m_masterArmSubsystem));
         m_xbox.leftTrigger().and(ALT.negate()).onTrue(new InstantCommand(()->m_masterArmSubsystem.simulateNoteAcquired()));
     
         // Utilities for fine tuning various arm positions, can be used in extremis
         // during a match if pickup angles are not working.
         // Use povRight, povLeft, povUp and povDown for fine setpoint adjustments, 
         // about 1 degree per button press)
+    /*
         m_xbox.povLeft().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.adjustInnerArmSetpointUp()));
         m_xbox.povRight().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.adjustInnerArmSetpointDown()));
         m_xbox.povUp().and(ALT.negate()).onTrue(new InstantCommand(()-> m_masterArmSubsystem.adjustMasterArmSetpointUp()));
@@ -207,7 +213,7 @@ public class RobotContainer {
         ALT.and(m_xbox.povDown()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopElevator()));
         ALT.and(m_xbox.leftTrigger()).onTrue(new InstantCommand(()-> m_climbSubsystem.runClimbWinch()));
         ALT.and(m_xbox.leftTrigger()).onFalse(new InstantCommand(()-> m_climbSubsystem.stopClimbWinch()));
-
+    */
     }
 
     /*
