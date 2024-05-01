@@ -84,6 +84,7 @@ public final class NotableConstants {           // As in all these constants are
         public static final double HIGH_SAFE_TO_ROTATE_POS      =  0.19;
         public static final double AMP_SHOT_POS                 =  0.2466;
         public static final double MASTER_ARM_HORIZ_POS         =  0.0;
+        public static final double WAVE_BOW_POS                 =  0.1466;
 
         public static final double ALLOWED_MASTER_ARM_POS_ERROR = 1.5 / 360.0;
         public static final long   ALLOWED_MILLIS_MA_SMALL_MOVE = 400;
@@ -141,9 +142,9 @@ public final class NotableConstants {           // As in all these constants are
 
         public static final double INNER_ARM_OUTPUT_LIMIT_FACTOR = 1.0;
 
-        public static final double NORMAL_WAVE_SPEED = 0.4;
-        public static final double FAST_WAVE_SPEED = 0.8;
-        public static final double NORMAL_WAVE_MAGNITURE = 25.0/360.0;  // Rotations +/- about horizontal (0 position)
+        public static final double NORMAL_WAVE_SPEED = 0.065;
+        public static final double FAST_WAVE_SPEED = 0.125;
+        public static final double NORMAL_WAVE_MAGNITURE = 30.0/360.0;  // Rotations +/- about horizontal (0 position)
         public static final double FAST_WAVE_MAGNITURE = 12.5/360.0;  // Rotations +/- about horizontal (0 position)
 
 

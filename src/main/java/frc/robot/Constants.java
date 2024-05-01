@@ -333,9 +333,9 @@ public final class Constants {
         public static final NeutralModeValue DRIVE_MOTOR_NEUTRAL_MODE = NeutralModeValue.Brake;
 
         // Swerve rotate speed and extent during a parade WAVE function
-        public static final double WAVE_SWERVE_ROTATE_SPEED = 0.175;    // Percent simulated joystick input
-        public static final double WAVE_ROTATION_EXTENT = 55/360;       // Rotation units per side, relative to 0 heading
-        public static final long   WAVE_ROTATION_PAUSE_IN_MS = 1500;    // Time in MS to stop rotating at limit
+        public static final double WAVE_SWERVE_ROTATE_SPEED = 0.1;      // Percent simulated joystick input
+        public static final double WAVE_ROTATION_EXTENT = 70;           // Degree units per side, relative to 0 heading
+        public static final long   WAVE_ROTATION_PAUSE_IN_MS = 2500;    // Time in MS to stop rotating at limit
                                                                         // and wave faster, before reverting to
                                                                         // normal wave and rotating to other side
                                                                         // See WaveCmd.java

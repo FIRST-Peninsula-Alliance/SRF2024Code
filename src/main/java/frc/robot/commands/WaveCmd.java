@@ -10,6 +10,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.SDC;
 import frc.robot.NotableConstants.IAC;
+import frc.robot.NotableConstants.MAC;
 import frc.robot.subsystems.MasterArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 
@@ -32,9 +33,18 @@ public class WaveCmd extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    m_noteConductor.startWavingAtCrowd(IAC.NORMAL_WAVE_SPEED, IAC.NORMAL_WAVE_MAGNITURE);
+	// The robot is expected to be on a trailer pointing straight back in start configuration.
+	// The robot rotation will be controlled by the gyro, so it must be reset to 0.0 
+	// when starting, but it would also be affected by any turns made by the 
+	// trailer during the parade. Fortunately the route for the Irrigation Festival
+	// Parade is a straight shot with no turns, once upon Washington Street, so don't 
+	// actually start the wave until that point.
+	m_swerveDrive.zeroGyro();
+	
     m_startTime = System.currentTimeMillis();
     m_waitTime = 1000;   // initial pause gives time for master arm to move up
+	
+	m_noteConductor.startWavingAtCrowd(IAC.NORMAL_WAVE_SPEED, IAC.NORMAL_WAVE_MAGNITURE);
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -60,6 +70,7 @@ public class WaveCmd extends Command {
         // m_waitTime to allow rotation to resume.
         m_waitTime = 0;
         m_noteConductor.startWavingAtCrowd(IAC.NORMAL_WAVE_SPEED, IAC.NORMAL_WAVE_MAGNITURE);
+        m_noteConductor.gotoPosition(MAC.AMP_SHOT_POS);
       }
     }
 
@@ -71,7 +82,7 @@ public class WaveCmd extends Command {
                         true);
 
     // And check if rotation limit to either side has been reached or exceeded
-    m_currentHeading = m_swerveDrive.getYaw2d().getRotations();
+    m_currentHeading = m_swerveDrive.getYaw2d().getDegrees();
     if (((m_waveRotationDirection == 1.0) && (m_currentHeading > SDC.WAVE_ROTATION_EXTENT))
         ||
         ((m_waveRotationDirection == -1.0) && (m_currentHeading < -SDC.WAVE_ROTATION_EXTENT))) {
@@ -80,6 +91,7 @@ public class WaveCmd extends Command {
       m_startTime = System.currentTimeMillis();
       m_waitTime = SDC.WAVE_ROTATION_PAUSE_IN_MS;
       m_noteConductor.startWavingAtCrowd(IAC.FAST_WAVE_SPEED, IAC.FAST_WAVE_MAGNITURE);
+      m_noteConductor.gotoPosition(MAC.WAVE_BOW_POS);
     }
   }
 
